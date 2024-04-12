@@ -3,9 +3,9 @@
 * Advantages and disadvantages of tranditional firewall and SDN firewall.
 # Solve
 <!-- * Cac hinh thuc tinh cong: DoS, DDoS, **Scan port**,... -->
-* How does 22:36:24s Firewall meet the advantages of SDN and how it solve disadvantage.
-* What functions does 22:38:03s Firewall have and compare for tranditional firewall.
-* Find out all the rules for the Firewall and 2024-04-12T22:39:06ploy those instances.
+* How does Firewall meet the advantages of SDN and how it solve disadvantage.
+* What functions does Firewall have and compare for tranditional firewall.
+* Find out all the rules for the Firewall and deploy those instances.
 * Use protocols :IP -> IPv4/IPv6, TCP/IP, UDP, ICMP
 * Tai sao lai block host do, block nhung cai gi tu host do gui den switch.
 * Why block that host? What package will block and what doesn't block?
