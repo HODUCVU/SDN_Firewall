@@ -15,7 +15,7 @@ class parse_firewall:
             
             list1.append(lines[i].split(',')) 
             list2 = copy.deepcopy(list1)
-            if(firewall_dict.has_key(str(list2[i][0])) is False):
+            if((list2[i][0])) not in firewall_dict:
                 key = str(list2[i][0])
                 list2[i].remove(key)
                 tup = tuple(list2[i])
@@ -23,7 +23,7 @@ class parse_firewall:
                 tup = tuple(listobj)
                 firewall_dict[key] = tup
                 
-            elif (firewall_dict.has_key(str(list2[i][0])) is True):
+            elif ((list2[i][0])) in firewall_dict:
                 key = str(list2[i][0])
                 dst = firewall_dict[key]
                 dst = list(dst)
@@ -33,5 +33,5 @@ class parse_firewall:
                 firewall_dict[key] = tup
                 
             del listobj[:] 
-        print len(firewall_dict.keys())
+        print(len(firewall_dict.keys()))
         return firewall_dict

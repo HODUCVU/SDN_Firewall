@@ -16,7 +16,9 @@
 from ryu.base import app_manager
 from ryu.controller import ofp_event, dpset
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER,set_ev_cls
-from ryu.ofproto import ofproto_v1_3, ofproto_v1_3_parser
+# from ryu.ofproto import ofproto_v1_3, ofproto_v1_3_parser
+from ryu.ofproto import ofproto_v1_0, ofproto_v1_2, ofproto_v1_3
+from ryu.ofproto import ofproto_v1_0_parser, ofproto_v1_2_parser, ofproto_v1_3_parser
 from ryu.lib.packet import packet,ethernet,ipv4,udp,tcp,icmp
 from ryu.ofproto.ether import ETH_TYPE_IP, ETH_TYPE_ARP,ETH_TYPE_LLDP,ETH_TYPE_MPLS,ETH_TYPE_IPV6
 from ryu.ofproto.inet import IPPROTO_ICMP, IPPROTO_TCP, IPPROTO_UDP,IPPROTO_SCTP
@@ -33,8 +35,10 @@ TCP_SYN_ACK = 0x12
 TCP_BOGUS_FLAGS = 0x15
 
 class InefficientFirewall(app_manager.RyuApp):
-    OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
-
+    # OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
+    OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION,
+                    ofproto_v1_2.OFP_VERSION,
+                    ofproto_v1_3.OFP_VERSION]
     inner_policy = {}
     icmp_conn_track = {}
     tcp_conn_track = {}
@@ -84,10 +88,10 @@ class InefficientFirewall(app_manager.RyuApp):
                 # Check for ICMP
                 if(ipo.proto == IPPROTO_ICMP):
                     flag1 = 0
-                    icmpob = pkt.get_protocol(icmp.icmp)
+                    icmpo = pkt.get_protocol(icmp.icmp)
                     
                     # Check if this is PING
-                    if ((icmpob.type==ICMP_PING) and self.inner_policy.has_key(ipo.src)):
+                    if ((icmpob.type==ICMP_PING) and (ipo.src in self.inner_policy)):
                         temp = self.inner_policy.get(ipo.src)
                         for i in range(0,len(temp)):
                             if temp[i][0] == ipo.dst:
@@ -100,7 +104,7 @@ class InefficientFirewall(app_manager.RyuApp):
                                     break
                                 
                     # Otherwise, PONG...!            
-                    elif((icmpob.type == ICMP_PONG) and (self.icmp_conn_track.has_key(ipo.src))):
+                    elif((icmpob.type == ICMP_PONG) and (ipo.src in self.icmp_conn_track)):
                         temp2 = self.icmp_conn_track.get(ipo.src)
                         for i in range(0,len(temp2)): 
                             if temp2[i][0] == ipo.dst:
@@ -125,7 +129,7 @@ class InefficientFirewall(app_manager.RyuApp):
                     
                     # TCP SYN packet
                     if (((tcpo.bits & TCP_SYN) == TCP_SYN) & ((tcpo.bits & TCP_BOGUS_FLAGS) == 0x00)):
-                        if self.inner_policy.has_key(ipo.src):
+                        if (ipo.src) in self.inner_policy:
                             temp = self.inner_policy.get(ipo.src)
                             for i in range(0,len(temp)):
                                 if ((temp[i][0] == ipo.dst) and (temp[i][1]=='TCP') and (int(temp[i][2]) == tcpo.src_port) and (int(temp[i][3]) == tcpo.dst_port)  and  (temp[i][5] == 'ALLOW')):
@@ -137,7 +141,7 @@ class InefficientFirewall(app_manager.RyuApp):
                     
                     # TCP SYN ACK packet                   
                     elif((tcpo.bits & TCP_SYN_ACK) == TCP_SYN_ACK):
-                        if self.tcp_conn_track.has_key(ipo.dst):
+                        if (ipo.dst) in self.tcp_conn_track:
                             temp2 = self.tcp_conn_track.get(ipo.dst)
                             for i in range(0,len(temp2)):
                                 if ((temp2[i][0] == ipo.src) and (int(temp2[i][1]) == tcpo.dst_port) and (int(temp2[i][2]) == tcpo.src_port)):
@@ -150,7 +154,7 @@ class InefficientFirewall(app_manager.RyuApp):
                     
                     # All remaining TCP packets, like, ACK, PUSH, FIN etc.            
                     else:
-                        if self.tcp_conn_track.has_key(ipo.src):
+                        if ipo.src in self.tcp_conn_track:
                             temp3 = self.tcp_conn_track.get(ipo.src)
                             for i in range(0,len(temp3)):
                                 if ((temp3[i][0] == ipo.dst) and (int(temp3[i][1]) == tcpo.src_port) and (int(temp3[i][2]) == tcpo.dst_port)):
@@ -171,7 +175,7 @@ class InefficientFirewall(app_manager.RyuApp):
                     udpo = pkt.get_protocol(udp.udp)
                     
                     # Check for tracked UDP
-                    if self.udp_conn_track.has_key(ipo.dst):
+                    if (ipo.dst) in self.udp_conn_track:
                         tmp_tpl = self.udp_conn_track.get(ipo.dst)
                         tmp = list(tmp_tpl)
                         for i in range(0,len(tmp)):
@@ -191,7 +195,7 @@ class InefficientFirewall(app_manager.RyuApp):
                             self.udp_conn_track.pop(ipo.dst,None)
                             
                     # Check for first UDP packet
-                    elif self.inner_policy.has_key(ipo.src):
+                    elif (ipo.src) in self.inner_policy:
                         temp = self.inner_policy.get(ipo.src)
                         for i in range(0,len(temp)):
                             if temp[i][0] == ipo.dst:
@@ -227,7 +231,7 @@ class InefficientFirewall(app_manager.RyuApp):
                 actions_default = action_drop
                 
         except Exception as err:
-            self.logger.info("MYERROR: %s" , err.message)
+            self.logger.info("MYERROR: %s" , str(err))
             action_drop = [parser.OFPActionOutput(ofproto.OFPPC_NO_FWD)]
             actions_default = action_drop
             
