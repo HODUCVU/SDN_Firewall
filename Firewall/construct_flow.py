@@ -1,4 +1,4 @@
-from ryu.ofproto.ether import ETH_TYPE_IP, ETH_TYPE_ARP, ETH_TYPE_LLDP, ETH_TYPE_MPLS ETH_TYPE_IPV6
+from ryu.ofproto.ether import ETH_TYPE_IP, ETH_TYPE_ARP, ETH_TYPE_LLDP, ETH_TYPE_MPLS, ETH_TYPE_IPV6
 from ryu.ofproto.inet import IPPROTO_ICMP, IPPROTO_TCP, IPPROTO_UDP, IPPROTO_SCTP
 from flow_addition import FlowAdd 
 import logging

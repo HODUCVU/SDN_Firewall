@@ -1,13 +1,14 @@
+from ryu.base import app_manager
 from ryu.controller import ofp_event, dpset
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, set_ev_cls
 # from ryu.ofproto import ofproto_v1_3, ofproto_v1_3_parser
 from ryu.ofproto import ofproto_v1_0, ofproto_v1_2, ofproto_v1_3
 from ryu.ofproto import ofproto_v1_0_parser, ofproto_v1_2_parser, ofproto_v1_3_parser
-from ryu.lib.paclet import packet, ethernet, ipv4, udp, tcp, icmp
+from ryu.lib.packet import packet, ethernet, ipv4, udp, tcp, icmp
 from ryu.ofproto.ether import ETH_TYPE_IP, ETH_TYPE_ARP, ETH_TYPE_LLDP, ETH_TYPE_MPLS, ETH_TYPE_IPV6
 from ryu.ofproto.inet import IPPROTO_ICMP, IPPROTO_TCP, IPPROTO_UDP, IPPROTO_SCTP
 # custom lib 
-from parse_firewall_rules import parse_firewall # ---
+from parse_firewall_rules import parse_firewall 
 from switch_information import SwitchInfo
 from packet_out import SendPacket
 from construct_flow import Construct 
@@ -15,11 +16,11 @@ from connection_tracking import TrackConnection
 
 ICMP_PING = 8
 ICMP_PONG = 0
-TCP_SYN = 0x12
+TCP_SYN = 0x02
 TCP_SYN_ACK = 0x12
 TCP_BOGUS_FLAGS = 0x15
 
-class Firewall(app_manager.RyuApp):
+class SecureFirewall(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION,
                     ofproto_v1_2.OFP_VERSION,
                     ofproto_v1_3.OFP_VERSION]
@@ -29,14 +30,14 @@ class Firewall(app_manager.RyuApp):
     tcp_conn_track = {}
     udp_conn_track = {}
     sendpkt = SendPacket()
-    flow = Contruct()
+    flow = Construct()
     track = TrackConnection()
 
     def __init__(self, *args, **kwargs):
-        super(Firewall, self).__init__(*args, **kwargs)
+        super(SecureFirewall, self).__init__(*args, **kwargs)
         self.mac_to_port = {}
         parser = parse_firewall()
-        self.inner_policy = parser.parser()
+        self.inner_policy = parser.parse()
         self.logger.info("dict is ready")
 
     @set_ev_cls(dpset.EventDP, dpset.DPSET_EV_DISPATCHER)
@@ -255,7 +256,7 @@ class Firewall(app_manager.RyuApp):
                     out_port = self.mac_to_port[datapath.id][eth_obj.dst]
                 else:
                     out_port = datapath.ofproto.OFPP_FLOOD
-        except expression as err:
+        except Exception as err:
             self.info(err.message)
             out_port = datapath.ofproto.OFPP_FLOOD
         finally:

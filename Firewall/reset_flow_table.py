@@ -27,4 +27,4 @@ class ResetSwitch():
         const.add_flow(datapath=dp, actions=actions, priority=0)
 
         actions = [parser.OFPActionOutput(ofproto.OFPPC_NO_FWD)]
-        const.add_flow(datapath = dp, actions=actions, priority=1000k, eth_type = ETH_TYPE_LLDP)
+        const.add_flow(datapath = dp, actions=actions, priority=1000, eth_type = ETH_TYPE_LLDP)
