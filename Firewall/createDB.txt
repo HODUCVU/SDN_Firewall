@@ -1,0 +1,12 @@
+pip install sqlite3
+CREATE TABLE firewall_rules (
+    id INTEGER PRIMARY KEY,
+    src_ip TEXT,
+    dst_ip TEXT,
+    protocol TEXT,
+    src_port INTEGER,
+    dst_port INTEGER,
+    state TEXT,
+    action TEXT
+);
+// save in .sql
