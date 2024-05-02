@@ -4,7 +4,7 @@ class ParseFirewall:
     
     def parse(self):
         # Connect to the SQLite database
-        conn = sqlite3.connect('firewall.db')
+        conn = sqlite3.connect('firewallDB.db')
         cursor = conn.cursor()
         
         # Read firewall rules from the database
