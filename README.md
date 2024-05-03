@@ -18,15 +18,6 @@ SDN_Firewall
 │   ├── flow_addition.py
 │   ├── packet_out.py
 │   ├── parse_firewall_rules.py
-│   ├── __pycache__
-│   │   ├── connection_tracking.cpython-38.pyc
-│   │   ├── construct_flow.cpython-38.pyc
-│   │   ├── customFirewallStateful.cpython-38.pyc
-│   │   ├── flow_addition.cpython-38.pyc
-│   │   ├── packet_out.cpython-38.pyc
-│   │   ├── parse_firewall_rules.cpython-38.pyc
-│   │   ├── reset_flow_table.cpython-38.pyc
-│   │   └── switch_information.cpython-38.pyc
 │   ├── reset_flow_table.py
 │   ├── switch_information.py
 │   └── testRealTime
@@ -49,21 +40,12 @@ SDN_Firewall
     ├── inefficient_stateless_firewall.py
     ├── packet_out.py
     ├── parse_firewall_rules.py
-    ├── __pycache__
-    │   ├── connection_tracking.cpython-38.pyc
-    │   ├── construct_flow.cpython-38.pyc
-    │   ├── flow_addition.cpython-38.pyc
-    │   ├── inefficient_stateful_firewall.cpython-38.pyc
-    │   ├── packet_out.cpython-38.pyc
-    │   ├── parse_firewall_rules.cpython-38.pyc
-    │   ├── reset_flow_table.cpython-38.pyc
-    │   └── switch_information.cpython-38.pyc
     ├── reset_flow_table.py
     ├── secure_stateful_firewall.py
     ├── secure_stateless_firewall.py
     └── switch_information.py
 
-7 directories, 49 files
+7 directories, 31 files
 ```
 ## Firewall - run on python3.8
 ### Test Firewall
