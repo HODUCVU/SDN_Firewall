@@ -2,8 +2,69 @@ SDN_Firewall
 ============
 ## My Topic
 * [Introduction topic](/Documents/IntroductionTopicSDN.pdf)
-
 * [Introduction from paper](/Documents/2015-IDP-OpenFlow-Firewall.pdf)
+## Structure repository
+```
+.
+├── Documents
+│   ├── 2015-IDP-OpenFlow-Firewall.pdf
+│   ├── IntroductionTopicSDN.pdf
+│   └── README.md
+├── Firewall
+│   ├── connection_tracking.py
+│   ├── construct_flow.py
+│   ├── customFirewallStateful.py
+│   ├── firewall.txt
+│   ├── flow_addition.py
+│   ├── packet_out.py
+│   ├── parse_firewall_rules.py
+│   ├── __pycache__
+│   │   ├── connection_tracking.cpython-38.pyc
+│   │   ├── construct_flow.cpython-38.pyc
+│   │   ├── customFirewallStateful.cpython-38.pyc
+│   │   ├── flow_addition.cpython-38.pyc
+│   │   ├── packet_out.cpython-38.pyc
+│   │   ├── parse_firewall_rules.cpython-38.pyc
+│   │   ├── reset_flow_table.cpython-38.pyc
+│   │   └── switch_information.cpython-38.pyc
+│   ├── reset_flow_table.py
+│   ├── switch_information.py
+│   └── testRealTime
+│       ├── firewall.csv
+│       ├── firewall.db
+│       ├── firewallDB.txt
+│       ├── initDB.py
+│       └── parse_firewall_rules_db.py
+├── Network
+│   └── network.py
+├── README.md
+└── src
+    ├── connection_tracking.py
+    ├── construct_flow.py
+    ├── firewall_stateful.txt
+    ├── firewall_stateless.txt
+    ├── firewall.txt
+    ├── flow_addition.py
+    ├── inefficient_stateful_firewall.py
+    ├── inefficient_stateless_firewall.py
+    ├── packet_out.py
+    ├── parse_firewall_rules.py
+    ├── __pycache__
+    │   ├── connection_tracking.cpython-38.pyc
+    │   ├── construct_flow.cpython-38.pyc
+    │   ├── flow_addition.cpython-38.pyc
+    │   ├── inefficient_stateful_firewall.cpython-38.pyc
+    │   ├── packet_out.cpython-38.pyc
+    │   ├── parse_firewall_rules.cpython-38.pyc
+    │   ├── reset_flow_table.cpython-38.pyc
+    │   └── switch_information.cpython-38.pyc
+    ├── reset_flow_table.py
+    ├── secure_stateful_firewall.py
+    ├── secure_stateless_firewall.py
+    └── switch_information.py
+
+7 directories, 49 files
+```
 ## Firewall - run on python3.8
 ### Test Firewall
 * Step 1: Create network 
