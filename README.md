@@ -31,3 +31,20 @@ mininet> xterm c0 s1 h1 h2
   h2> ping -c1 10.0.0.1 
   //block ping
   ```
+* Network 
+```
+Three directly connected switches plus a host attached to each switch 
+with a remote RYU SDN Controller (c0):
+                _ _ _ _ _ c0_ _ _ _ _ _
+              /           |             \
+             /            |              \
+            /             |               \
+           /              |                \
+          /               |                 \
+     ----s1--------------s2-----------------s3------
+    / /  |  \ \     / /  |  \ \      /   /  |   \   \
+   h1 h2 h3 h4 h5  h6 h7 h8 h9 h10  h11 h12 h13 h14 h15
+> cd Network 
+> sudo python3 network.py
+```
+

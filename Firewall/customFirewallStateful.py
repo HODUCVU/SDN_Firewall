@@ -53,7 +53,7 @@ class SecureFirewall(app_manager.RyuApp):
         parser = datapath.ofproto_parser
         in_port = msg.match['in_port']
 
-        action_default = []
+        actions_default = []
         action_fwd_to_out_port = []
         out_port = ofproto.OFPP_FLOOD 
         action_drop = [parser.OFPActionOutput(ofproto.OFPPC_NO_FWD)]
