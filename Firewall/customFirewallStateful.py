@@ -53,14 +53,22 @@ class SecureFirewall(app_manager.RyuApp):
         parser = datapath.ofproto_parser
         in_port = msg.match['in_port']
 
+        action_default = []
+        action_fwd_to_out_port = []
+        out_port = ofproto.OFPP_FLOOD 
+        action_drop = [parser.OFPActionOutput(ofproto.OFPPC_NO_FWD)]
+
         try:
             pkt = packet.Packet(msg.data)
             eth = pkt.get_protocols(ethernet.ethernet)[0]
             ethtype = eth.ethertype
 
             out_port = self.port_learn(datapath, eth, in_port)
-            action_fwd_to_out_port = [parser.OFPActionOutput(out_port)]
-            action_drop = [parser.OFPActionOutput(ofproto.OFPPC_NO_FWD)]
+
+            if out_port != ofproto.OFPP_FLOOD:
+                action_fwd_to_out_port = [parser.OFPActionOutput(out_port)]
+            else:
+                action_fwd_to_out_port = action_drop 
             actions_default = action_fwd_to_out_port
 
             if(out_port != ofproto.OFPP_FLOOD) and (ethtype == ETH_TYPE_IP):
