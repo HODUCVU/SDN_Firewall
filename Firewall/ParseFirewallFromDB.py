@@ -5,6 +5,8 @@ class ParseFirewallFromDB:
         self.db_file = db_file 
         self.conn = sqlite3.connect(db_file)
         self.cursor = self.conn.cursor()
+    def __del__(self):
+        self.conn.close()
 
     def parse(self):
         firewall_dict = {}
@@ -32,8 +34,8 @@ class ParseFirewallFromDB:
             print("Error in parse database: ", e)
             return {}
 
-    def close_connection(self):
-        self.conn.close()
+    # def close_connection(self):
+    #     self.conn.close()
 
 if __name__ == "__main__":
     db_file = "firewall-vTest.db"
@@ -43,4 +45,4 @@ if __name__ == "__main__":
         print("Successfully parsed database")
     else: 
         print("Failed to parse database")
-    parser.close_connection()
+    # parser.close_connection()

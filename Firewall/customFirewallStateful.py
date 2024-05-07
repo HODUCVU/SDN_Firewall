@@ -132,7 +132,7 @@ class SecureFirewall(app_manager.RyuApp):
                     tcpo = pkt.get_protocol(tcp.tcp)
                     flag2 = 0 
                     # TCP SYN packet 
-                    if ((tcpo.bits & TCP_SYN) == TCP_SYN) & ((tcpo.buts & TCP_BOGUS_FLAGS) == 0x00):
+                    if ((tcpo.bits & TCP_SYN) == TCP_SYN) & ((tcpo.bits & TCP_BOGUS_FLAGS) == 0x00):
                         if ipo.src in self.inner_policy:
                             temp = self.inner_policy.get(ipo.src)
                             for i in range(0, len(temp)):
