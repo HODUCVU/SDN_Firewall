@@ -4,49 +4,7 @@ SDN_Firewall
 * [Introduction topic](https://github.com/HODUCVU/SDN_Firewall/blob/main/Documents/Project's_Introduction.pdf)
 * [Introduction from paper](/Documents/2015-IDP-OpenFlow-Firewall.pdf)
 ## Structure repository
-```
-.
-├── Documents
-│   ├── 2015-IDP-OpenFlow-Firewall.pdf
-│   ├── IntroductionTopicSDN.pdf
-│   └── README.md
-├── Firewall
-│   ├── connection_tracking.py
-│   ├── construct_flow.py
-│   ├── customFirewallStateful.py
-│   ├── firewall.txt
-│   ├── flow_addition.py
-│   ├── packet_out.py
-│   ├── parse_firewall_rules.py
-│   ├── reset_flow_table.py
-│   ├── switch_information.py
-│   └── testRealTime
-│       ├── firewall.csv
-│       ├── firewall.db
-│       ├── firewallDB.txt
-│       ├── initDB.py
-│       └── parse_firewall_rules_db.py
-├── Network
-│   └── network.py
-├── README.md
-└── src
-    ├── connection_tracking.py
-    ├── construct_flow.py
-    ├── firewall_stateful.txt
-    ├── firewall_stateless.txt
-    ├── firewall.txt
-    ├── flow_addition.py
-    ├── inefficient_stateful_firewall.py
-    ├── inefficient_stateless_firewall.py
-    ├── packet_out.py
-    ├── parse_firewall_rules.py
-    ├── reset_flow_table.py
-    ├── secure_stateful_firewall.py
-    ├── secure_stateless_firewall.py
-    └── switch_information.py
 
-7 directories, 31 files
-```
 ## Firewall - run on python3.8
 ### Test Firewall
 * Step 1: Create network 
@@ -114,4 +72,15 @@ s1 lo:  s1-eth1:s2-eth1 s1-eth2:h1-eth0 s1-eth3:h2-eth0 s1-eth4:h3-eth0 s1-eth5:
 s2 lo:  s2-eth1:s1-eth1 s2-eth2:s3-eth1 s2-eth3:h6-eth0 s2-eth4:h7-eth0 s2-eth5:h8-eth0 s2-eth6:h9-eth0 s2-eth7:h10-eth0
 s3 lo:  s3-eth1:s2-eth2 s3-eth2:h11-eth0 s3-eth3:h12-eth0 s3-eth4:h13-eth0 s3-eth5:h14-eth0 s3-eth6:h15-eth0
 c0
+```
+### Firewall Controller with Real-time
+* Step 1: Create database
+```
+SDN_Firewall> cd Firewall/SQL
+# Create database
+SQL> python3 initDB.py
+```
+* Step 2: Run Firewall with connected database
+```
+Firewall> python3 customFirwallStateful.py
 ```

@@ -8,7 +8,8 @@ from ryu.lib.packet import packet, ethernet, ipv4, udp, tcp, icmp
 from ryu.ofproto.ether import ETH_TYPE_IP, ETH_TYPE_ARP, ETH_TYPE_LLDP, ETH_TYPE_MPLS, ETH_TYPE_IPV6
 from ryu.ofproto.inet import IPPROTO_ICMP, IPPROTO_TCP, IPPROTO_UDP, IPPROTO_SCTP
 # custom lib 
-from parse_firewall_rules import parse_firewall 
+# from parse_firewall_rules import parse_firewall 
+from ParseFirewallFromDB import ParseFirewallFromDB
 from switch_information import SwitchInfo
 from packet_out import SendPacket
 from construct_flow import Construct 
@@ -36,8 +37,14 @@ class SecureFirewall(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(SecureFirewall, self).__init__(*args, **kwargs)
         self.mac_to_port = {}
-        parser = parse_firewall()
+        # parser = parse_firewall()
+        parser = ParseFirewallFromDB("dataset/firewall-vTest.db")
         self.inner_policy = parser.parse()
+
+        if self.inner_policy:
+            self.logger.info("Firewall rules parsed successfully from the database.")
+        else:
+            self.logger.error("Failed to parse firewall rules from the database.")
         self.logger.info("dict is ready")
 
     @set_ev_cls(dpset.EventDP, dpset.DPSET_EV_DISPATCHER)
