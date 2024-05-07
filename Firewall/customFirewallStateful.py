@@ -270,5 +270,6 @@ class SecureFirewall(app_manager.RyuApp):
         except Exception as err:
             self.info(err)
             out_port = datapath.ofproto.OFPP_FLOOD
+            return out_port
         # finally:
         #     return out_port 
