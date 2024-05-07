@@ -55,8 +55,7 @@ class SecureFirewall(app_manager.RyuApp):
 
         actions_default = []
         action_fwd_to_out_port = []
-        out_port = ofproto.OFPP_FLOOD 
-        action_drop = [parser.OFPActionOutput(ofproto.OFPPC_NO_FWD)]
+        # out_port = ofproto.OFPP_FLOOD 
 
         try:
             pkt = packet.Packet(msg.data)
@@ -64,11 +63,12 @@ class SecureFirewall(app_manager.RyuApp):
             ethtype = eth.ethertype
 
             out_port = self.port_learn(datapath, eth, in_port)
+            action_drop = [parser.OFPActionOutput(ofproto.OFPPC_NO_FWD)]
 
-            if out_port != ofproto.OFPP_FLOOD:
-                action_fwd_to_out_port = [parser.OFPActionOutput(out_port)]
-            else:
-                action_fwd_to_out_port = action_drop 
+            # if out_port != ofproto.OFPP_FLOOD:
+            action_fwd_to_out_port = [parser.OFPActionOutput(out_port)]
+            # else:
+                # action_fwd_to_out_port = action_drop 
             actions_default = action_fwd_to_out_port
 
             if(out_port != ofproto.OFPP_FLOOD) and (ethtype == ETH_TYPE_IP):
@@ -242,7 +242,7 @@ class SecureFirewall(app_manager.RyuApp):
                 actions_default = action_drop
 
         except Exception as err:
-            self.logger.info("ERROR: %s", err.message)
+            self.logger.info("ERROR: %s", err)
             action_drop = [parser.OFPActionOutput(ofproto.OFPPC_NO_FWD)]
             actions_default = action_drop
         finally:
@@ -256,16 +256,19 @@ class SecureFirewall(app_manager.RyuApp):
                                in_port=in_port, eth_type=ETH_TYPE_ARP, eth_src=eth_obj.src,eth_dst=eth_obj.dst)
     def port_learn(self, datapath, eth_obj, in_port):
         try:
-            self.mac_to_port.setdefault(datapath.id, {'90:e2:ba:1c:55:54':1, '90:e2:ba:1c:55:55':2})
+            self.mac_to_port.setdefault(datapath.id, {'00:00:00:00:00:01':1, '00:00:00:00:00:02':2})
             self.mac_to_port[datapath.id][eth_obj.src] = in_port
+            # out_port = datapath.ofproto.OFPP_FLOOD
 
             if (eth_obj.ethertype == ETH_TYPE_IP) or (eth_obj.ethertype == ETH_TYPE_ARP):
                 if eth_obj.dst in self.mac_to_port[datapath.id]:
                     out_port = self.mac_to_port[datapath.id][eth_obj.dst]
-                else:
-                    out_port = datapath.ofproto.OFPP_FLOOD
+                    return out_port 
+                # else:
+                out_port = datapath.ofproto.OFPP_FLOOD
+                return out_port 
         except Exception as err:
-            self.info(err.message)
+            self.info(err)
             out_port = datapath.ofproto.OFPP_FLOOD
-        finally:
-            return out_port 
+        # finally:
+        #     return out_port 

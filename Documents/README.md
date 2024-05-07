@@ -15,6 +15,7 @@
 1. Fix code -> Done
 2. Find out all the rules for the Firewall and deploy those instances.
   - Why block that host? What packets will block and what doesn't block?
+    - Corresponds to the rules.
   - Check for irregularities in flows. Example: Diffrent s_ips have the same dst_ip, or One s_ips send packets to overnumber host.
   - Check payload, if packets don't have payload then this packets is potential packets attack to host/switch.
   - No need to block all packets from a host, justt block only files that are potential malicious, or block only when the file has certain properties.
