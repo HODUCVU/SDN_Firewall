@@ -79,19 +79,23 @@ class SecureFirewall(app_manager.RyuApp):
             actions_default = action_fwd_to_out_port
 
             if(out_port != ofproto.OFPP_FLOOD) and (ethtype == ETH_TYPE_IP):
+                # <here>
                 ipo = pkt.get_protocols(ipv4.ipv4)[0]
 
-                # check for ICMP 
+                # check for ICMP  
                 if ipo.proto == IPPROTO_ICMP:
                     icmpob = pkt.get_protocol(icmp.icmp)
                     flag1 = 0 
 
-                    # Check if this is ICMP_PING
+                    # Check if this is ICMP_PING 
                     if ((icmpob.type==ICMP_PING) and (ipo.src in self.inner_policy)):
                         temp = self.inner_policy.get(ipo.src)
                         for i in range(0, len(temp)):
+                            # print(temp[i][0])
                             if temp[i][0] == ipo.dst:
                                 xyz = temp[i]
+                                # <here>
+                                # print(xyz[1->5])
                                 if(xyz[1] == "ICMP") and (xyz[5] == 'ALLOW'): #--- column in firewall rules 
                                     flag1 = 1 
                                     actions_default = action_fwd_to_out_port
@@ -101,12 +105,14 @@ class SecureFirewall(app_manager.RyuApp):
                                                        eth_type=ETH_TYPE_IP, ip_proto=IPPROTO_ICMP, icmpv4_type=ICMP_PING, 
                                                        ipv4_src=ipo.src, ipv4_dst = ipo.dst)
                                     break
-                    # Otherwise, ICMP_PONG
+                    # Otherwise, ICMP_PONG 
                     elif (icmpob.type == ICMP_PONG) and (ipo.dst in self.icmp_conn_track):
                         tmp = self.icmp_conn_track.get(ipo.dst)
                         for i in range(0, len(tmp)):
+                            # <here>
                             if tmp[i][0] == ipo.src:
                                 xyz = tmp[i]
+                                 # <here>
                                 if(xyz[1] == 'PING') and (xyz[2] == 'PONG'):
                                     flag1 = 1
                                     actions_default = action_fwd_to_out_port
@@ -127,15 +133,16 @@ class SecureFirewall(app_manager.RyuApp):
                                            icmpv4_type = icmpob.type, ipv4_src = ipo.src, ipv4_dst = ipo.dst)
                         self.logger.info("%s -> %s : BLOCKED" %(ipo.src, ipo.dst))
 
-                # Check for TCP 
+                # Check for TCP  
                 elif (ipo.proto == IPPROTO_TCP):
                     tcpo = pkt.get_protocol(tcp.tcp)
                     flag2 = 0 
-                    # TCP SYN packet 
+                    # TCP SYN packet <here> 
                     if ((tcpo.bits & TCP_SYN) == TCP_SYN) & ((tcpo.bits & TCP_BOGUS_FLAGS) == 0x00):
                         if ipo.src in self.inner_policy:
                             temp = self.inner_policy.get(ipo.src)
                             for i in range(0, len(temp)):
+                                 # <here>
                                 if((temp[i][0] == ipo.dst) and (temp[i][1] == 'TCP') and (int(temp[i][2]) == tcpo.src_port) and (int(temp[i][3]) == tcpo.dst_port)
                                        and (temp[i][5] == 'ALLOW')):
                                     flag2 = 2 
@@ -148,11 +155,12 @@ class SecureFirewall(app_manager.RyuApp):
                                                        ipv4_src = ipo.src, ipv4_dst=ipo.dst,
                                                        tcp_src=tcpo.src_port, tcp_dst=tcpo.dst_port)
                                     break 
-                    # TCP SYN ACK packet 
+                    # TCP SYN ACK packet  
                     elif (tcpo.bits & TCP_SYN_ACK) == TCP_SYN_ACK:
                         if ipo.dst in self.tcp_conn_track:
                             temp2 = self.tcp_conn_track.get(ipo.dst)
                             for i in range(0, len(temp2)):
+                                 # <here>
                                 if (temp2[i][0] == ipo.src) and (int(temp[i][1]) == tcpo.dst_port) and (int(temp2[i][2]) == tcpo.src_port):
                                     flag2 = 1 
                                     actions_default = action_fwd_to_out_port
@@ -169,6 +177,7 @@ class SecureFirewall(app_manager.RyuApp):
                         if ipo.src in self.tcp_conn_track:
                             temp3 = self.tcp_conn_track.get(ipo.src)
                             for i in range(0, len(temp3)):
+                                #  <here>
                                 if (temp3[i][0] == ipo.src) and (int(temp3[i][1]) == tcpo.src_port) and (int(temp3[i][2]) == tcpo.dst_port):
                                     flag2 = 1 
                                     actions_default = action_fwd_to_out_port
@@ -179,7 +188,7 @@ class SecureFirewall(app_manager.RyuApp):
                         actions_default = action_drop
                         self.logger.info("%s -> %s : BLOCKED" % (ipo.src, ipo.dst))
                 
-                # Check for UDP
+                # Check for UDP 
                 elif ipo.proto == IPPROTO_UDP:
                     flag3 = 0 
                     udpo = pkt.get_protocol(udp.udp)
@@ -189,8 +198,10 @@ class SecureFirewall(app_manager.RyuApp):
                         tmp_tpl = self.udp_conn_track.get(ipo.dst)
                         tmp = list(tmp_tpl)
                         for i in range(0, len(tmp)):
+                            #  <here>
                             if(tmp[i][0] == ipo.src):
                                 xyz = tmp[i]
+                                # <here>
                                 if (int(xyz[1]) == udpo.dst_port) and (int(xyz[2]) == udpo.src_port) and (xyz[3] == "UNREPLIED"):
                                     flag3 = 1 
                                     self.logger.info("%s -> %s : UDP PACKET ALLOWED" % (ipo.src, ipo.dst))
@@ -212,8 +223,10 @@ class SecureFirewall(app_manager.RyuApp):
                     elif ipo.src in self.inner_policy:
                         temp = self.inner_policy.get(ipo.src)
                         for i in range(0, len(temp)):
+                            #  <here>
                             if temp[i][0] == ipo.dst:
                                 xyz = temp[i]
+                                #  <here>
                                 if (xyz[1] == 'UDP') and (int(xyz[2]) == udpo.src_port) and (int(xyz[3]) == udpo.dst_port) and (xyz[5] == 'ALLOW'): 
                                     flag3 = 1 
                                     actions_default = action_fwd_to_out_port
@@ -263,7 +276,10 @@ class SecureFirewall(app_manager.RyuApp):
                                in_port=in_port, eth_type=ETH_TYPE_ARP, eth_src=eth_obj.src,eth_dst=eth_obj.dst)
     def port_learn(self, datapath, eth_obj, in_port):
         try:
-            self.mac_to_port.setdefault(datapath.id, {'00:00:00:00:00:01':1, '00:00:00:00:00:02':2})
+            self.mac_to_port.setdefault(datapath.id, {'00:00:00:00:00:01':1, '00:00:00:00:00:02':2, '00:00:00:00:00:03':3, '00:00:00:00:00:04':5,
+                                                      '00:00:00:00:00:06':6,'00:00:00:00:00:07':7,'00:00:00:00:00:08':8,'00:00:00:00:00:09':9,
+                                                      '00:00:00:00:00:10':10,'00:00:00:00:00:11':11,'00:00:00:00:00:12':12,'00:00:00:00:00:12':13,
+                                                      '00:00:00:00:00:14':14,'00:00:00:00:00:15':15,})
             self.mac_to_port[datapath.id][eth_obj.src] = in_port
             # out_port = datapath.ofproto.OFPP_FLOOD
 

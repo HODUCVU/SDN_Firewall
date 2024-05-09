@@ -15,12 +15,12 @@ class ParseFirewallFromDB:
             self.cursor.execute("SELECT src_ip, dst_ip, protocol, src_port, dst_port, state, action FROM firewall_rules")
             rows = self.cursor.fetchall()
 
-            # In ra thông tin từ các hàng trong bảng
             print("Firewall Rules:")
             print("Source IP | Destination IP | Protocol | Source Port | Destination Port | State | Action")
             for row in rows:
                 src_ip, dst_ip, protocol, src_port, dst_port, state, action = row 
                 print(f"{src_ip} | {dst_ip} | {protocol} | {src_port} | {dst_port} | {state} | {action}")
+
                 key = str(src_ip)
                 value = (dst_ip, protocol, src_port, dst_port, state, action)
 
@@ -46,3 +46,7 @@ if __name__ == "__main__":
     else: 
         print("Failed to parse database")
     # parser.close_connection()
+    # check with code on <here> (if) to see what it queyre
+    #
+    #
+    #

@@ -100,3 +100,8 @@ mininet> xterm c0 h1 h2
   h2> hping3 --udp -c 10 -s 8080 -p 1000 -S 10.0.0.1
   and ...
   ```
+## Works
+1. Check query database from rules.
+2. Covert database from 'ALLOW' to 'DROP'.
+3. Create rule check times send packet from source IP Address.
+4. Run on project' network (3 switch).

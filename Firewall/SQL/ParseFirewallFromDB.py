@@ -44,3 +44,6 @@ if __name__ == "__main__":
     else: 
         print("Failed to parse database")
     parser.close_connection()
+    # print("SQLite version: ",sqlite3.version, " -> sqlite3.version")
+    # print("Lib version sqlite3: ", sqlite3.sqlite_version, " -> sqlite3.sqlite_version")
+
