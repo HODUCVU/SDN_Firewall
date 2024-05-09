@@ -31,7 +31,7 @@ class FirewallManager:
     def insert_firewall_rules_from_file(self, file_path):
         with open(file_path, 'r') as file:
             for line in file:
-                parts = line.strip().spit(',')
+                parts = line.strip().split(',')
                 if len(parts) != 7:
                     continue
                 src_ip = parts[0]
@@ -60,25 +60,29 @@ def readFiletoDatabase(db_file, file_path):
     firewall_manager.close_connection()
 
 if __name__ == "__main__":
-    db_file = "firewall-vTest.db"
+    db_file = "dataset/firewall-drop.db"
+    # readFiletoDatabase(db_file, "SQL/firewallDrop.csv")
     firewall_rules = [
-        ("10.0.0.1", "10.0.0.2", "TCP", 1000, 8080, "NEW", "ALLOW"),
-        ("10.0.0.1", "10.0.0.3", "TCP", 1000, 8080, "NEW", "ALLOW"),
-        ("10.0.0.2", "10.0.0.3", "TCP", 1000, 1000, "NEW", "ALLOW"),
-        ("10.0.0.2", "10.0.0.1", "TCP", 8080, 1000, "EST", "ALLOW"),
-        ("10.0.0.2", "10.0.0.3", "TCP", 1000, 1000, "EST", "ALLOW"),
-        ("10.0.0.3", "10.0.0.2", "TCP", 1000, 1000, "EST", "ALLOW"),
-        ("10.0.0.3", "10.0.0.2", "TCP", 1000, 1000, "NEW", "ALLOW"),
-        ("10.0.0.3", "10.0.0.1", "TCP", 8080, 1000, "EST", "ALLOW"),
-        ("10.0.0.1", "10.0.0.2", "UDP", 1000, 8080, None,"ALLOW"),
-        ("10.0.0.1", "10.0.0.3", "UDP", 1000, 8080, None, "ALLOW"),
-        ("10.0.0.3", "10.0.0.1", "UDP", 8080, 1000, None, "ALLOW"),
-        ("10.0.0.3", "10.0.0.2", "UDP", 1000, 1000, None, "ALLOW"),
-        ("10.0.0.2", "10.0.0.1", "UDP", 8080, 1000, None, "ALLOW"),
-        ("10.0.0.2", "10.0.0.3", "UDP", 1000, 8080, None, "ALLOW"),
-        ("10.0.0.1", "10.0.0.2", "ICMP", None, None, "PING", "ALLOW"),
-        ("81.84.126.220", "147.83.42.206", "UDP", 57253, 1897, None, "ALLOW"),
-        ("81.84.126.220", "147.83.42.206", "TCP", 57253, 1897, "NEW", "ALLOW"),
+        ("10.0.0.1", "10.0.0.14", "ICMP", None, None, "PING", "DROP"),
+        # ("10.0.0.3", "10.0.0.4", "ICMP", None, None, "PING", "DROP"),
+        # ("10.0.0.2", "10.0.0.1", "ICMP", None, None, "PING", "ALLOW")
+        # ("10.0.0.1", "10.0.0.2", "TCP", 1000, 8080, "NEW", "ALLOW"),
+        # ("10.0.0.1", "10.0.0.3", "TCP", 1000, 8080, "NEW", "ALLOW"),
+        # ("10.0.0.2", "10.0.0.3", "TCP", 1000, 1000, "NEW", "ALLOW"),
+        # ("10.0.0.2", "10.0.0.1", "TCP", 8080, 1000, "EST", "ALLOW"),
+        # ("10.0.0.2", "10.0.0.3", "TCP", 1000, 1000, "EST", "ALLOW"),
+        # ("10.0.0.3", "10.0.0.2", "TCP", 1000, 1000, "EST", "ALLOW"),
+        # ("10.0.0.3", "10.0.0.2", "TCP", 1000, 1000, "NEW", "ALLOW"),
+        # ("10.0.0.3", "10.0.0.1", "TCP", 8080, 1000, "EST", "ALLOW"),
+        # ("10.0.0.1", "10.0.0.2", "UDP", 1000, 8080, None,"ALLOW"),
+        # ("10.0.0.1", "10.0.0.3", "UDP", 1000, 8080, None, "ALLOW"),
+        # ("10.0.0.3", "10.0.0.1", "UDP", 8080, 1000, None, "ALLOW"),
+        # ("10.0.0.3", "10.0.0.2", "UDP", 1000, 1000, None, "ALLOW"),
+        # ("10.0.0.2", "10.0.0.1", "UDP", 8080, 1000, None, "ALLOW"),
+        # ("10.0.0.2", "10.0.0.3", "UDP", 1000, 8080, None, "ALLOW"),
+        # ("10.0.0.1", "10.0.0.2", "ICMP", None, None, "PING", "ALLOW"),
+        # ("81.84.126.220", "147.83.42.206", "UDP", 57253, 1897, None, "ALLOW"),
+        # ("81.84.126.220", "147.83.42.206", "TCP", 57253, 1897, "NEW", "ALLOW"),
     ]
     firewall_manager = FirewallManager(db_file)
     firewall_manager.create_table()

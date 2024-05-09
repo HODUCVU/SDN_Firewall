@@ -15,6 +15,12 @@ from packet_out import SendPacket
 from construct_flow import Construct 
 from connection_tracking import TrackConnection
 
+from collections import defaultdict
+from ryu.lib import hub
+import time
+
+# start_time = time.time()
+
 ICMP_PING = 8
 ICMP_PONG = 0
 # hping3 -c 10 -k -s source_port -p destination_port -A dst_ip
@@ -28,6 +34,12 @@ class SecureFirewall(app_manager.RyuApp):
                     ofproto_v1_2.OFP_VERSION,
                     ofproto_v1_3.OFP_VERSION]
 
+    # insert_drop = {}
+    total_packet = defaultdict(int)
+    # last_time = time.monotonic() 
+    # current_time = time.monotonic()
+
+    database = ParseFirewallFromDB("dataset/firewall-drop.db")
     inner_policy = {}
     icmp_conn_track = {}
     tcp_conn_track = {}
@@ -39,15 +51,33 @@ class SecureFirewall(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(SecureFirewall, self).__init__(*args, **kwargs)
         self.mac_to_port = {}
-        # parser = parse_firewall()
-        parser = ParseFirewallFromDB("dataset/firewall-vTest.db")
-        self.inner_policy = parser.parse()
+        # parser = ParseFirewallFromDB("dataset/firewall-drop.db")
+        # self.inner_policy = parser.parse()
+        self.inner_policy = self.database.parse()
+
+        self.totaltime = 0.0
+        # self.current_time = time.time()
+        self.last_time = time.time() 
+        self.monitor_thread = hub.spawn(self._monitor)
 
         if self.inner_policy:
             self.logger.info("Firewall rules parsed successfully from the database.")
         else:
             self.logger.error("Failed to parse firewall rules from the database.")
         self.logger.info("dict is ready")
+
+    def _monitor(self):
+        while True:
+            current_time = time.time()
+            elapsed_time = current_time - self.last_time
+            self.totaltime += elapsed_time
+            print("on monitor: ", self.totaltime)
+            self.last_time = current_time
+            hub.sleep(1)
+        # self.current_time = time.time()
+        # self.totaltime = round((self.current_time - self.last_time), 1)
+        # hub.sleep(1)
+
 
     @set_ev_cls(dpset.EventDP, dpset.DPSET_EV_DISPATCHER)
     def handler_datapath(self, ev):
@@ -57,6 +87,8 @@ class SecureFirewall(app_manager.RyuApp):
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
         msg = ev.msg
+        # data = msg.data
+        # print("data: ", len(data))
         datapath = msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -68,6 +100,8 @@ class SecureFirewall(app_manager.RyuApp):
 
         try:
             pkt = packet.Packet(msg.data)
+            # data = pkt.data
+            # print("len: ", len(data)," - data: ", data)
             eth = pkt.get_protocols(ethernet.ethernet)[0]
             ethtype = eth.ethertype
 
@@ -83,7 +117,44 @@ class SecureFirewall(app_manager.RyuApp):
             if(out_port != ofproto.OFPP_FLOOD) and (ethtype == ETH_TYPE_IP):
                 # <here>
                 ipo = pkt.get_protocols(ipv4.ipv4)[0]
+                # <check behave>
+                # <add extract header for this condition>
+                if(ipo.src not in self.inner_policy) or (ipo.dst not in self.inner_policy):
+                    self.total_packet[(ipo.src, ipo.dst)] += 1
 
+                print("totaltile: ", self.totaltime)
+                if(self.totaltime >= 1.0):
+                        # firewall_rules = [
+                        #     ("10.0.0.3", "10.0.0.4", "ICMP", None, None, "PING", "DROP"),
+                        #     ("10.0.0.1", "10.0.0.2", "TCP", 1000, 8080, "NEW", "ALLOW"),
+                        #     ]
+                    self.totaltime = 0.0
+                    print("------")
+                    print("total packet from %s -> %s: " % (ipo.src, ipo.dst), self.total_packet[(ipo.src, ipo.dst)] )
+                    print("------")
+                    if self.total_packet[(ipo.src, ipo.dst)] >= 10:
+                        self.total_packet[(ipo.src, ipo.dst)] = 1
+
+                        # self.total_packet.clear()
+                        #drop
+                        if ipo.proto == IPPROTO_ICMP:
+                            actions_default = action_drop #drop
+                            self.icmp_conn_track = self.track.conn_track_dict(self.icmp_conn_track,ipo.src, ipo.dst, "PING", "PONG", xyz[5],1)
+                            self.logger.info("%s -> %s: Oversend Package" % (ipo.src, ipo.dst))
+                            self.flow.add_flow(datapath=datapath, actions=actions_default, priority=1002, in_port=in_port,
+                                                eth_type=ETH_TYPE_IP, ip_proto=IPPROTO_ICMP, icmpv4_type=ICMP_PING, 
+                                                ipv4_src=ipo.src, ipv4_dst = ipo.dst)
+                        elif ipo.proto == IPPROTO_TCP:
+                            tcpo = pkt.get_protocol(tcp.tcp)
+                            actions_default = action_drop
+                            self.logger.info("%s -> %s : Oversend TCP Package" % (ipo.src, ipo.dst))
+                            self.tcp_conn_track = self.track.conn_track_dict(self.tcp_conn_track, ipo.src, ipo.dst, tcpo.src_port,
+                                                                                tcpo.dst_port, tcpo.seq, 1)
+                            self.flow.add_flow(datapath=datapath, actions=actions_default, priority = 1002, in_port=in_port,
+                                                eth_type = ETH_TYPE_IP, ip_proto= IPPROTO_TCP,
+                                                ipv4_src = ipo.src, ipv4_dst=ipo.dst,
+                                                tcp_src=tcpo.src_port, tcp_dst=tcpo.dst_port)
+                    # self.last_time = self.current_time
                 # check for ICMP  
                 if ipo.proto == IPPROTO_ICMP:
                     icmpob = pkt.get_protocol(icmp.icmp)
@@ -98,11 +169,11 @@ class SecureFirewall(app_manager.RyuApp):
                                 xyz = temp[i]
                                 # <here>
                                 # print(xyz[1->5])
-                                if(xyz[1] == "ICMP") and (xyz[5] == 'ALLOW'): #--- column in firewall rules 
+                                if(xyz[1] == "ICMP") and (xyz[5] == 'DROP'): #--- column in firewall rules 
                                     flag1 = 1 
-                                    actions_default = action_fwd_to_out_port
+                                    actions_default = action_drop #drop
                                     self.icmp_conn_track = self.track.conn_track_dict(self.icmp_conn_track,ipo.src, ipo.dst, "PING", "PONG", xyz[5],1)
-                                    self.logger.info("%s -> %s: Echo Request allowd" % (ipo.src, ipo.dst))
+                                    self.logger.info("%s -> %s: Echo Request droped" % (ipo.src, ipo.dst))
                                     self.flow.add_flow(datapath=datapath, actions=actions_default, priority=1001, in_port=in_port,
                                                        eth_type=ETH_TYPE_IP, ip_proto=IPPROTO_ICMP, icmpv4_type=ICMP_PING, 
                                                        ipv4_src=ipo.src, ipv4_dst = ipo.dst)
@@ -116,8 +187,9 @@ class SecureFirewall(app_manager.RyuApp):
                                 xyz = tmp[i]
                                  # <here>
                                 if(xyz[1] == 'PING') and (xyz[2] == 'PONG'):
+                                    print("ICMP track PING")
                                     flag1 = 1
-                                    actions_default = action_fwd_to_out_port
+                                    actions_default = action_drop
                                     self.flow.add_flow(datapath = datapath, actions=actions_default,
                                                        priority=1001, in_port=in_port, eth_type=ETH_TYPE_IP,
                                                        ip_proto = IPPROTO_ICMP, icmpv4_type=ICMP_PONG,
@@ -125,19 +197,20 @@ class SecureFirewall(app_manager.RyuApp):
                                     self.icmp_conn_track = self.track.conn_track_dict(self.icmp_conn_track, ipo.src,
                                                                                       ipo.dst, "PONG", "PING",
                                                                                       xyz[3], 1)
-                                    self.logger.info("\n%s -> %s action = PING, state = ESTABLISHED \n" % (ipo.dst, ipo.src))
-
+                                    self.logger.info("\n%s -> %s action = PING, state = BLOCKED \n" % (ipo.dst, ipo.src))
+                    # Time
                     # No match
                     if(flag1==0):
-                        actions_default = action_drop
+                        actions_default = action_fwd_to_out_port
                         self.flow.add_flow(datapath=datapath, actions=actions_default, priority=1001,
                                            in_port=in_port, eth_type=ETH_TYPE_IP, ip_proto = IPPROTO_ICMP,
                                            icmpv4_type = icmpob.type, ipv4_src = ipo.src, ipv4_dst = ipo.dst)
-                        self.logger.info("%s -> %s : BLOCKED" %(ipo.src, ipo.dst))
+                        self.logger.info("%s -> %s : ALLOWED" %(ipo.src, ipo.dst))
 
                 # Check for TCP  
                 elif (ipo.proto == IPPROTO_TCP):
                     tcpo = pkt.get_protocol(tcp.tcp)
+                    # tcp_payload = pkt.protocols[-1] 
                     print("--------")
                     print("tcp.bits: ", tcpo.bits, " -- TCP_SYN: ", TCP_SYN, "-- &: ", (tcpo.bits & TCP_SYN))
                     print("--------")
@@ -152,10 +225,10 @@ class SecureFirewall(app_manager.RyuApp):
                                 print("srcIP: ", ipo.src, " - dstIP: ", temp[i][0], " -- Protocol: ", temp[i][1], " -- srcPort: ", temp[i][2], " dstPort: ", temp[i][3])
                                 print("srcIP: ", ipo.src, " - dstIP: ", ipo.dst, " -- Protocol: Nocheck", " -- srcPort: ", tcpo.src_port, " dstPort: ", tcpo.dst_port)
                                 if((temp[i][0] == ipo.dst) and (temp[i][1] == 'TCP') and (int(temp[i][2]) == tcpo.src_port) and (int(temp[i][3]) == tcpo.dst_port)
-                                       and (temp[i][5] == 'ALLOW')):
+                                       and (temp[i][5] == 'DROP')):
                                     flag2 = 1 
-                                    actions_default = action_fwd_to_out_port
-                                    self.logger.info("%s -> %s : SYN ALLOWED" % (ipo.src, ipo.dst))
+                                    actions_default = action_drop
+                                    self.logger.info("%s -> %s : SYN DROPPED" % (ipo.src, ipo.dst))
                                     self.tcp_conn_track = self.track.conn_track_dict(self.tcp_conn_track, ipo.src, ipo.dst, tcpo.src_port,
                                                                                      tcpo.dst_port, tcpo.seq, 1)
                                     self.flow.add_flow(datapath=datapath, actions=actions_default, priority = 1001, in_port=in_port,
@@ -170,16 +243,17 @@ class SecureFirewall(app_manager.RyuApp):
                             temp2 = self.tcp_conn_track.get(ipo.dst)
                             for i in range(0, len(temp2)):
                                  # <here>
-                                if (temp2[i][0] == ipo.src) and (int(temp[i][1]) == tcpo.dst_port) and (int(temp2[i][2]) == tcpo.src_port):
+                                if (temp2[i][0] == ipo.src) and (int(temp2[i][1]) == tcpo.dst_port) and (int(temp2[i][2]) == tcpo.src_port):
+                                    print("TCP SA track")
                                     flag2 = 1 
-                                    actions_default = action_fwd_to_out_port
-                                    self.logger.info("%s -> %s : SYN ACK ALLOWED" % (ipo.src, ipo.dst))
+                                    actions_default = action_drop
+                                    self.logger.info("%s -> %s : SYN ACK DROPPED" % (ipo.src, ipo.dst))
                                     self.tcp_conn_track = self.track.conn_track_dict(self.tcp_conn_track, ipo.src, ipo.dst, tcpo.src_port,
                                                                                      tcpo.dst_port, tcpo.seq, 1)
                                     self.flow.add_flow(datapath = datapath, actions=actions_default, priority = 1001, in_port = in_port,
                                                        eth_type = ETH_TYPE_IP, ip_proto = IPPROTO_TCP, ipv4_src = ipo.src,
                                                        ipv4_dst = ipo.dst, tcp_src=tcpo.src_port, tcp_dst=tcpo.dst_port)
-                                    self.logger.info("\n %s -> %s src_port=%s, dst_port=%s, state= ESTABLISHED\n" %(ipo.dst, ipo.src, temp2[i][1], temp2[i][2]))
+                                    self.logger.info("\n %s -> %s src_port=%s, dst_port=%s, state= BLOCKED\n" %(ipo.dst, ipo.src, temp2[i][1], temp2[i][2]))
                                     break 
                     # All remaining TCP packets 
                     else:
@@ -189,19 +263,19 @@ class SecureFirewall(app_manager.RyuApp):
                                 #  <here>
                                 if (temp3[i][0] == ipo.dst) and (int(temp3[i][1]) == tcpo.src_port) and (int(temp3[i][2]) == tcpo.dst_port):
                                     flag2 = 1 
-                                    actions_default = action_fwd_to_out_port
-                                    self.logger.info("%s -> %s : TRANSMISSION ALLOWED" % (ipo.src, ipo.dst))
+                                    actions_default = action_drop
+                                    self.logger.info("%s -> %s : TRANSMISSION DROPPED" % (ipo.src, ipo.dst))
                                     break 
                     # No match 
                     if flag2 == 0:
-                        actions_default = action_drop
-                        self.logger.info("%s -> %s : BLOCKED" % (ipo.src, ipo.dst))
+                        actions_default = action_fwd_to_out_port
+                        self.logger.info("%s -> %s : ALLOWED" % (ipo.src, ipo.dst))
                 
                 # Check for UDP 
                 elif ipo.proto == IPPROTO_UDP:
                     flag3 = 0 
                     udpo = pkt.get_protocol(udp.udp)
-
+                    # udp_payload = udpo.payload
                     # Check for tracked UDP 
                     if ipo.dst in self.udp_conn_track:
                         tmp_tpl = self.udp_conn_track.get(ipo.dst)
