@@ -3,8 +3,35 @@ SDN_Firewall
 ## My Topic
 * [Introduction topic](https://github.com/HODUCVU/SDN_Firewall/blob/main/Documents/Project's_Introduction.pdf)
 * [Introduction from paper](/Documents/2015-IDP-OpenFlow-Firewall.pdf)
-## Structure repository
-
+## Important files 
+```
+.
+├── Documents
+│   ├── 2015-IDP-OpenFlow-Firewall.pdf
+│   ├── Project's_Introduction.pdf
+│   ├── README.md
+├── Firewall
+│   ├── connection_tracking.py
+│   ├── construct_flow.py
+│   ├── customFirewallStateful.py
+│   ├── dataset
+│   │   ├── firewall-drop.db
+│   │   └── firewall-vTest.db
+│   ├── FirewallDrop.py ***************
+│   ├── flow_addition.py
+│   ├── packet_out.py
+│   ├── ParseFirewallFromDB.py 
+│   ├── parse_firewall_rules.py
+│   ├── reset_flow_table.py
+│   ├── SQL
+│   │   ├── firewallDB.txt
+│   │   ├── firewallDrop.csv
+│   │   ├── initDB.py
+│   └── switch_information.py
+├── Network
+│   └── network.py
+├── README.md
+```
 ### Network 
 * Structure Network
 ```
@@ -59,7 +86,7 @@ SQL> python3 initDB.py
 Firewall> python3 ParseFirewallFromDB.py
 ```
 
-### Run check for Firewall
+## Run check for Firewall
 * Step 1: Create network 
 ```
 > cd Network 
