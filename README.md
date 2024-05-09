@@ -62,46 +62,50 @@ Firewall> python3 ParseFirewallFromDB.py
 ### Run check for Firewall
 * Step 1: Create network 
 ```
-> sudo mn --topo single,4 --mac --controller remote,ip=127.0.0.1 -i 10.0.0.0/24 --switch ovsk
+> cd Network 
+> sudo python3 network.py
 ```
+<!-- ``` -->
+<!-- > sudo mn --topo single,4 --mac --controller remote,ip=127.0.0.1 -i 10.0.0.0/24 --switch ovsk -->
+<!-- ``` -->
 * Step 2: Open terminal for devices 
 ```
-mininet> xterm c0 h1 h2
+mininet> xterm c0 h1 h2 h3 <...>
 ```
 * Step 3: Check
   * Controller
   ```
   c0> cd Firewall
-  c0> ryu-manager customFirwallStateful.py
-  ```
-  * Switch 
-  ```
-  s1> set Bridge s1
+  c0> ryu-manager FirewallDrop.py
   ```
   * Ping with ICMP protocol
   ```
   h1> ping -c2 10.0.0.2 
-  // connect establish
+  // Drop
   h2> ping -c1 10.0.0.1 
-  //block ping
-  and ...
+  // connect (don't have in table drop)
+  //and ...
+  // ping to other ip to check connect
   ```
   * Ping with TCP protocol
   ```
-  h1> hping3 -c 1 -s 1000 -p 8080 10.0.0.2 
-  //-> BLOCK 
-  h2> hping3 -c 1 -s 8080 -p 1000 10.0.0.1 
-  //-> SYN ALLOWED
-  and ...
+  h1 (SYN)> hping3 -c 10 -k -s 1000 -p 8080 -S 10.0.0.2 
+  h1 (SYN_ASK)> hping3 -c 10 -k -s 1000 -p 8080 -SA 10.0.0.2 
+  //-> DROP 
+  h2 (SYN)> hping3 -c 10 -k -s 8080 -p 1000 -S 10.0.0.1 
+  h2 (SYN_ASK)> hping3 -c 10 -k -s 8080 -p 1000 -SA 10.0.0.1 
+  //-> DROP
+  //and ...
+  // ping to other port to check connect
   ```
   * Ping with UDP protocol 
   ```
-  h1> hping3 --udp -c 10 -s 1000 -p 8080 -S 10.0.0.2
-  h2> hping3 --udp -c 10 -s 8080 -p 1000 -S 10.0.0.1
-  and ...
+  h1> hping3 --udp -c 10 -k -s 1000 -p 8080 10.0.0.2
+  h2> hping3 --udp -c 10 -k -s 8080 -p 1000 10.0.0.1
+  //and ...
   ```
 ## Works
-1. Check query database from rules.
-2. Covert database from 'ALLOW' to 'DROP'.
-3. Create rule check times send packet from source IP Address.
-4. Run on project' network (3 switch).
+1. Check query database from rules. -- Done
+2. Covert database from 'ALLOW' to 'DROP'. -- Done
+3. Create rule check times send packet from source IP Address. -- Semi
+4. Run on project' network (3 switch). -- Done
