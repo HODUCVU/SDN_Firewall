@@ -1,9 +1,12 @@
+from operator import attrgetter
+from ryu.app import simple_switch_13
 from ryu.base import app_manager
 from ryu.controller import ofp_event, dpset
-from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, set_ev_cls
+from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, set_ev_cls, DEAD_DISPATCHER
 # from ryu.ofproto import ofproto_v1_3, ofproto_v1_3_parser
 from ryu.ofproto import ofproto_v1_0, ofproto_v1_2, ofproto_v1_3
 from ryu.ofproto import ofproto_v1_0_parser, ofproto_v1_2_parser, ofproto_v1_3_parser
+from ryu.lib import ofctl_v1_3
 from ryu.lib.packet import packet, ethernet, ipv4, udp, tcp, icmp
 from ryu.ofproto.ether import ETH_TYPE_IP, ETH_TYPE_ARP, ETH_TYPE_LLDP, ETH_TYPE_MPLS, ETH_TYPE_IPV6
 from ryu.ofproto.inet import IPPROTO_ICMP, IPPROTO_TCP, IPPROTO_UDP, IPPROTO_SCTP
@@ -18,8 +21,8 @@ from connection_tracking import TrackConnection
 from collections import defaultdict
 from ryu.lib import hub
 import time
-
-# start_time = time.time()
+from ryu.lib import dpid as dpid_lib
+from ctrlapi import CtrlApi
 
 ICMP_PING = 8
 ICMP_PONG = 0
@@ -33,11 +36,8 @@ class SecureFirewall(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION,
                     ofproto_v1_2.OFP_VERSION,
                     ofproto_v1_3.OFP_VERSION]
+    _CONTEXTS = {"dpset": dpset.DPSet}
 
-    # insert_drop = {}
-    total_packet = defaultdict(int)
-    # last_time = time.monotonic() 
-    # current_time = time.monotonic()
 
     database = ParseFirewallFromDB("dataset/firewall-drop.db")
     inner_policy = {}
@@ -51,13 +51,19 @@ class SecureFirewall(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(SecureFirewall, self).__init__(*args, **kwargs)
         self.mac_to_port = {}
-        # parser = ParseFirewallFromDB("dataset/firewall-drop.db")
-        # self.inner_policy = parser.parse()
         self.inner_policy = self.database.parse()
 
-        self.totaltime = 0.0
+        self.dpset = kwargs["dpset"]
+        self.ofctl = ofctl_v1_3
+        self.ctrl_api = CtrlApi(self)
+        self.msgs = {}
+
         # self.current_time = time.time()
-        self.last_time = time.time() 
+        # self.last_time = self.current_time
+        
+        # Get avenger value of stats on switch_information
+        self.total_packet = defaultdict(int)
+        self.datapaths = {}
         self.monitor_thread = hub.spawn(self._monitor)
 
         if self.inner_policy:
@@ -65,20 +71,188 @@ class SecureFirewall(app_manager.RyuApp):
         else:
             self.logger.error("Failed to parse firewall rules from the database.")
         self.logger.info("dict is ready")
+    # Get Stats
+    @set_ev_cls(ofp_event.EventOFPStateChange,
+                [MAIN_DISPATCHER, DEAD_DISPATCHER])
+    def _state_change_handler(self, ev):
+        datapath = ev.datapath
+        if ev.state == MAIN_DISPATCHER:
+            if datapath.id not in self.datapaths:
+                self.logger.debug('register datapath: %016x', datapath.id)
+                self.datapaths[datapath.id] = datapath
+        elif ev.state == DEAD_DISPATCHER:
+            if datapath.id in self.datapaths:
+                self.logger.debug('unregister datapath: %016x', datapath.id)
+                del self.datapaths[datapath.id]
 
     def _monitor(self):
         while True:
-            current_time = time.time()
-            elapsed_time = current_time - self.last_time
-            self.totaltime += elapsed_time
-            print("on monitor: ", self.totaltime)
-            self.last_time = current_time
-            hub.sleep(1)
-        # self.current_time = time.time()
-        # self.totaltime = round((self.current_time - self.last_time), 1)
-        # hub.sleep(1)
+            for dp in self.datapaths.values():
+                dpid_str = dpid_lib.dpid_to_str(dp.id)
+                if  dpid_str[:2] == '00':
+                    self._request_stats(dp)
+            # current_time = time.time()
+            # elapsed_time = current_time - self.last_time
+            # self.totaltime += elapsed_time
+            # print("on monitor: ", self.totaltime)
+            # self.last_time = current_time
+            hub.sleep(5)
+    def _request_stats(self, datapath):
+        self.logger.debug('send stats request: %016x', datapath.id)
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
 
+        req = parser.OFPFlowStatsRequest(datapath)
+        datapath.send_msg(req)
+    # @set_ev_cls(
+    #     [   ofp_event.EventOFPStatsReply,
+    #         ofp_event.EventOFPDescStatsReply,
+    #         ofp_event.EventOFPFlowStatsReply,
+    #         ofp_event.EventOFPAggregateStatsReply,
+    #         ofp_event.EventOFPTableStatsReply,
+    #         # ofp_event.EventOFPTableFeaturesStatsReply,
+    #         ofp_event.EventOFPPortStatsReply,
+    #         # ofp_event.EventOFPQueueStatsReply,
+    #         # ofp_event.EventOFPQueueDescStatsReply,
+    #         ofp_event.EventOFPMeterStatsReply,
+    #         ofp_event.EventOFPMeterFeaturesStatsReply,
+    #         ofp_event.EventOFPMeterConfigStatsReply,
+    #         ofp_event.EventOFPGroupStatsReply,
+    #         # ofp_event.EventOFPGroupFeaturesStatsReply,
+    #         ofp_event.EventOFPGroupDescStatsReply,
+    #         ofp_event.EventOFPPortDescStatsReply,
+    #     ],
+    #     MAIN_DISPATCHER,
+    # )
+    # def stats_reply_handler(self, event):
+    #     """Handles Reply Events"""
+    #     msg = event.msg
+    #     data_path = msg.datapath
+    #
+    #     if data_path.id not in self.ctrl_api.get_waiters():
+    #         return
+    #     if msg.xid not in self.ctrl_api.get_waiters()[data_path.id]:
+    #         return
+    #     lock, msgs = self.ctrl_api.get_waiters()[data_path.id][msg.xid]
+    #     self.msgs.append(msg)
+    #
+    #     # self.logger("---------------------")
+    #     # for m in msgs:
+    #     #     self.logger(m)
+    #     # self.logger("---------------------")
+    #
+    #     flags = data_path.ofproto.OFPMPF_REPLY_MORE
+    #
+    #     if msg.flags & flags:
+    #         return
+    #     del self.ctrl_api.get_waiters()[data_path.id][msg.xid]
+    #     lock.set()
+    # @set_ev_cls(ofp_event.EventOFPFlowStatsReply, MAIN_DISPATCHER)
+    @set_ev_cls(
+        [   ofp_event.EventOFPStatsReply,
+            ofp_event.EventOFPDescStatsReply,
+            ofp_event.EventOFPFlowStatsReply,
+            ofp_event.EventOFPAggregateStatsReply,
+            ofp_event.EventOFPTableStatsReply,
+            # ofp_event.EventOFPTableFeaturesStatsReply,
+            ofp_event.EventOFPPortStatsReply,
+            # ofp_event.EventOFPQueueStatsReply,
+            # ofp_event.EventOFPQueueDescStatsReply,
+            ofp_event.EventOFPMeterStatsReply,
+            ofp_event.EventOFPMeterFeaturesStatsReply,
+            ofp_event.EventOFPMeterConfigStatsReply,
+            ofp_event.EventOFPGroupStatsReply,
+            # ofp_event.EventOFPGroupFeaturesStatsReply,
+            ofp_event.EventOFPGroupDescStatsReply,
+            ofp_event.EventOFPPortDescStatsReply,
+        ],
+        MAIN_DISPATCHER,
+    )
+    def _flow_stats_reply_handler(self, ev):
+        body = ev.msg.body
 
+        datapath = ev.msg.datapath
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+        # action_drop = [parser.OFPActionOutput(ofproto.OFPPC_NO_FWD)]
+        try:
+            self.logger.info('datapath         '
+                            'in-port  '
+                            'out-port packets  bytes')
+            self.logger.info('---------------- '
+                            '-------- '
+                            '-------- -------- --------')
+            for stat in sorted([flow for flow in body if flow.priority == 1001],
+                               key=lambda flow: (flow.match.get('in_port', 0))):
+
+                self.total_packet[(stat.match['in_port'], stat.instructions[0].actions[0].port)] += 10
+                # self.total_packet[(int(stat.match['ipv4_src']), int(stat.match['ipv4_dst']))] += 10
+                print(stat.packet_count/self.total_packet[(stat.match['in_port'], stat.instructions[0].actions[0].port)])
+                self.logger.info("Match: ")
+                self.logger.info(stat.match)
+                if(stat.packet_count / self.total_packet[(stat.match['in_port'], stat.instructions[0].actions[0].port)]) >= 3:
+                    # Drop this packet here
+                    # self.logger.info("DROP in --- in_port: ",stat.match['in_port']," out_port: ", stat.instructions[0].actions[0].port)
+                    self.logger.info("DROP in --- in_port: {}, out_port: {}".format(stat.match['in_port'], stat.instructions[0].actions[0].port))
+                    actions = []
+                    inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+                    mod = parser.OFPFlowMod(datapath=datapath, priority=1002, match=stat.match, instructions=inst)
+                    datapath.send_msg(mod)
+
+                    # ipv4_src = stat.match.get('ipv4_src')
+                    # ipv4_dst = stat.match.get('ipv4_dst')
+                    # in_port = stat.match.get('in_port')
+                    # eth = stat.match.get('eth_type')
+                    # ip_proto = stat.match.get('ip_proto')
+
+                    
+
+                self.logger.info('%016x %8x %8x %8d %8d',
+                                ev.msg.datapath.id,
+                                stat.match['in_port'],# stat.match['eth_src'], stat.match['eth_dst'],
+                                stat.instructions[0].actions[0].port,
+                                stat.packet_count, stat.byte_count)
+
+        except Exception as err:
+            self.logger.info("ERROR in 140: %s", err)
+    # <check behave>
+    # <add extract header for this condition>
+    # if(ipo.src not in self.inner_policy) or (ipo.dst not in self.inner_policy):
+    #     self.total_packet[(ipo.src, ipo.dst)] += 1
+
+    # print("totaltile: ", self.totaltime)
+    # if(self.totaltime >= 1.0):
+    # firewall_rules = [
+    #     ("10.0.0.3", "10.0.0.4", "ICMP", None, None, "PING", "DROP"),
+    #     ("10.0.0.1", "10.0.0.2", "TCP", 1000, 8080, "NEW", "ALLOW"),
+    #     ]
+    # self.totaltime = 0.0
+    # print("------")
+    # print("total packet from %s -> %s: " % (ipo.src, ipo.dst), self.total_packet[(ipo.src, ipo.dst)] )
+    # print("------")
+    # if self.total_packet[(ipo.src, ipo.dst)] >= 10:
+    #     self.total_packet[(ipo.src, ipo.dst)] = 1
+    #
+    #     # self.total_packet.clear()
+    #     #drop
+    #     if ipo.proto == IPPROTO_ICMP:
+    #         actions_default = action_drop #drop
+    #         self.icmp_conn_track = self.track.conn_track_dict(self.icmp_conn_track,ipo.src, ipo.dst, "PING", "PONG", xyz[5],1)
+    #         self.logger.info("%s -> %s: Oversend Package" % (ipo.src, ipo.dst))
+    #         self.flow.add_flow(datapath=datapath, actions=actions_default, priority=1002, in_port=in_port,
+    #                             eth_type=ETH_TYPE_IP, ip_proto=IPPROTO_ICMP, icmpv4_type=ICMP_PING, 
+    #                             ipv4_src=ipo.src, ipv4_dst = ipo.dst)
+    #     elif ipo.proto == IPPROTO_TCP:
+    #         tcpo = pkt.get_protocol(tcp.tcp)
+    #         actions_default = action_drop
+    #         self.logger.info("%s -> %s : Oversend TCP Package" % (ipo.src, ipo.dst))
+    #         self.tcp_conn_track = self.track.conn_track_dict(self.tcp_conn_track, ipo.src, ipo.dst, tcpo.src_port,
+    #                                                             tcpo.dst_port, tcpo.seq, 1)
+    #         self.flow.add_flow(datapath=datapath, actions=actions_default, priority = 1002, in_port=in_port,
+    #                             eth_type = ETH_TYPE_IP, ip_proto= IPPROTO_TCP,
+    #                             ipv4_src = ipo.src, ipv4_dst=ipo.dst,
+    #                             tcp_src=tcpo.src_port, tcp_dst=tcpo.dst_port)
+    
     @set_ev_cls(dpset.EventDP, dpset.DPSET_EV_DISPATCHER)
     def handler_datapath(self, ev):
         SwitchInfo(ev)
@@ -96,70 +270,24 @@ class SecureFirewall(app_manager.RyuApp):
 
         actions_default = []
         action_fwd_to_out_port = []
-        # out_port = ofproto.OFPP_FLOOD 
 
         try:
             pkt = packet.Packet(msg.data)
-            # data = pkt.data
-            # print("len: ", len(data)," - data: ", data)
             eth = pkt.get_protocols(ethernet.ethernet)[0]
             ethtype = eth.ethertype
 
             out_port = self.port_learn(datapath, eth, in_port)
             action_drop = [parser.OFPActionOutput(ofproto.OFPPC_NO_FWD)]
 
-            # if out_port != ofproto.OFPP_FLOOD:
             action_fwd_to_out_port = [parser.OFPActionOutput(out_port)]
-            # else:
-                # action_fwd_to_out_port = action_drop 
             actions_default = action_fwd_to_out_port
 
             if(out_port != ofproto.OFPP_FLOOD) and (ethtype == ETH_TYPE_IP):
-                # <here>
                 ipo = pkt.get_protocols(ipv4.ipv4)[0]
-                # <check behave>
-                # <add extract header for this condition>
-                if(ipo.src not in self.inner_policy) or (ipo.dst not in self.inner_policy):
-                    self.total_packet[(ipo.src, ipo.dst)] += 1
-
-                print("totaltile: ", self.totaltime)
-                if(self.totaltime >= 1.0):
-                        # firewall_rules = [
-                        #     ("10.0.0.3", "10.0.0.4", "ICMP", None, None, "PING", "DROP"),
-                        #     ("10.0.0.1", "10.0.0.2", "TCP", 1000, 8080, "NEW", "ALLOW"),
-                        #     ]
-                    self.totaltime = 0.0
-                    print("------")
-                    print("total packet from %s -> %s: " % (ipo.src, ipo.dst), self.total_packet[(ipo.src, ipo.dst)] )
-                    print("------")
-                    if self.total_packet[(ipo.src, ipo.dst)] >= 10:
-                        self.total_packet[(ipo.src, ipo.dst)] = 1
-
-                        # self.total_packet.clear()
-                        #drop
-                        if ipo.proto == IPPROTO_ICMP:
-                            actions_default = action_drop #drop
-                            self.icmp_conn_track = self.track.conn_track_dict(self.icmp_conn_track,ipo.src, ipo.dst, "PING", "PONG", xyz[5],1)
-                            self.logger.info("%s -> %s: Oversend Package" % (ipo.src, ipo.dst))
-                            self.flow.add_flow(datapath=datapath, actions=actions_default, priority=1002, in_port=in_port,
-                                                eth_type=ETH_TYPE_IP, ip_proto=IPPROTO_ICMP, icmpv4_type=ICMP_PING, 
-                                                ipv4_src=ipo.src, ipv4_dst = ipo.dst)
-                        elif ipo.proto == IPPROTO_TCP:
-                            tcpo = pkt.get_protocol(tcp.tcp)
-                            actions_default = action_drop
-                            self.logger.info("%s -> %s : Oversend TCP Package" % (ipo.src, ipo.dst))
-                            self.tcp_conn_track = self.track.conn_track_dict(self.tcp_conn_track, ipo.src, ipo.dst, tcpo.src_port,
-                                                                                tcpo.dst_port, tcpo.seq, 1)
-                            self.flow.add_flow(datapath=datapath, actions=actions_default, priority = 1002, in_port=in_port,
-                                                eth_type = ETH_TYPE_IP, ip_proto= IPPROTO_TCP,
-                                                ipv4_src = ipo.src, ipv4_dst=ipo.dst,
-                                                tcp_src=tcpo.src_port, tcp_dst=tcpo.dst_port)
-                    # self.last_time = self.current_time
                 # check for ICMP  
                 if ipo.proto == IPPROTO_ICMP:
                     icmpob = pkt.get_protocol(icmp.icmp)
                     flag1 = 0 
-
                     # Check if this is ICMP_PING 
                     if ((icmpob.type==ICMP_PING) and (ipo.src in self.inner_policy)):
                         temp = self.inner_policy.get(ipo.src)
@@ -174,7 +302,7 @@ class SecureFirewall(app_manager.RyuApp):
                                     actions_default = action_drop #drop
                                     self.icmp_conn_track = self.track.conn_track_dict(self.icmp_conn_track,ipo.src, ipo.dst, "PING", "PONG", xyz[5],1)
                                     self.logger.info("%s -> %s: Echo Request droped" % (ipo.src, ipo.dst))
-                                    self.flow.add_flow(datapath=datapath, actions=actions_default, priority=1001, in_port=in_port,
+                                    self.flow.add_flow(datapath=datapath, actions=actions_default, priority=1002, in_port=in_port,
                                                        eth_type=ETH_TYPE_IP, ip_proto=IPPROTO_ICMP, icmpv4_type=ICMP_PING, 
                                                        ipv4_src=ipo.src, ipv4_dst = ipo.dst)
                                     break
@@ -191,7 +319,7 @@ class SecureFirewall(app_manager.RyuApp):
                                     flag1 = 1
                                     actions_default = action_drop
                                     self.flow.add_flow(datapath = datapath, actions=actions_default,
-                                                       priority=1001, in_port=in_port, eth_type=ETH_TYPE_IP,
+                                                       priority=1002, in_port=in_port, eth_type=ETH_TYPE_IP,
                                                        ip_proto = IPPROTO_ICMP, icmpv4_type=ICMP_PONG,
                                                        ipv4_src=ipo.src, ipv4_dst=ipo.dst)
                                     self.icmp_conn_track = self.track.conn_track_dict(self.icmp_conn_track, ipo.src,
@@ -202,9 +330,11 @@ class SecureFirewall(app_manager.RyuApp):
                     # No match
                     if(flag1==0):
                         actions_default = action_fwd_to_out_port
-                        self.flow.add_flow(datapath=datapath, actions=actions_default, priority=1001,
-                                           in_port=in_port, eth_type=ETH_TYPE_IP, ip_proto = IPPROTO_ICMP,
-                                           icmpv4_type = icmpob.type, ipv4_src = ipo.src, ipv4_dst = ipo.dst)
+                        self.flow.add_flow(datapath = datapath, actions=actions_default,
+                                            priority=1001, in_port=in_port, eth_type=ETH_TYPE_IP,
+                                            ip_proto = IPPROTO_ICMP, icmpv4_type=ICMP_PONG,
+                                            ipv4_src=ipo.src, ipv4_dst=ipo.dst)
+
                         self.logger.info("%s -> %s : ALLOWED" %(ipo.src, ipo.dst))
 
                 # Check for TCP  
@@ -231,7 +361,7 @@ class SecureFirewall(app_manager.RyuApp):
                                     self.logger.info("%s -> %s : SYN DROPPED" % (ipo.src, ipo.dst))
                                     self.tcp_conn_track = self.track.conn_track_dict(self.tcp_conn_track, ipo.src, ipo.dst, tcpo.src_port,
                                                                                      tcpo.dst_port, tcpo.seq, 1)
-                                    self.flow.add_flow(datapath=datapath, actions=actions_default, priority = 1001, in_port=in_port,
+                                    self.flow.add_flow(datapath=datapath, actions=actions_default, priority = 1002, in_port=in_port,
                                                        eth_type = ETH_TYPE_IP, ip_proto= IPPROTO_TCP,
                                                        ipv4_src = ipo.src, ipv4_dst=ipo.dst,
                                                        tcp_src=tcpo.src_port, tcp_dst=tcpo.dst_port)
@@ -250,7 +380,7 @@ class SecureFirewall(app_manager.RyuApp):
                                     self.logger.info("%s -> %s : SYN ACK DROPPED" % (ipo.src, ipo.dst))
                                     self.tcp_conn_track = self.track.conn_track_dict(self.tcp_conn_track, ipo.src, ipo.dst, tcpo.src_port,
                                                                                      tcpo.dst_port, tcpo.seq, 1)
-                                    self.flow.add_flow(datapath = datapath, actions=actions_default, priority = 1001, in_port = in_port,
+                                    self.flow.add_flow(datapath = datapath, actions=actions_default, priority = 1002, in_port = in_port,
                                                        eth_type = ETH_TYPE_IP, ip_proto = IPPROTO_TCP, ipv4_src = ipo.src,
                                                        ipv4_dst = ipo.dst, tcp_src=tcpo.src_port, tcp_dst=tcpo.dst_port)
                                     self.logger.info("\n %s -> %s src_port=%s, dst_port=%s, state= BLOCKED\n" %(ipo.dst, ipo.src, temp2[i][1], temp2[i][2]))
@@ -269,6 +399,10 @@ class SecureFirewall(app_manager.RyuApp):
                     # No match 
                     if flag2 == 0:
                         actions_default = action_fwd_to_out_port
+                        self.flow.add_flow(datapath=datapath, actions=actions_default, priority = 1001, in_port=in_port,
+                                            eth_type = ETH_TYPE_IP, ip_proto= IPPROTO_TCP,
+                                            ipv4_src = ipo.src, ipv4_dst=ipo.dst,
+                                            tcp_src=tcpo.src_port, tcp_dst=tcpo.dst_port)
                         self.logger.info("%s -> %s : ALLOWED" % (ipo.src, ipo.dst))
                 
                 # Check for UDP 
@@ -326,7 +460,7 @@ class SecureFirewall(app_manager.RyuApp):
                     if flag3 == 0:
                         actions_default = action_drop
                         self.logger.info("%s -> %s : UDP BLOCKED" % (ipo.src, ipo.dst))
-                        self.flow.add_flow(datapath = datapath, actions = actions_default, priority =  1001,
+                        self.flow.add_flow(datapath = datapath, actions = actions_default, priority =  1002,
                                             in_port = in_port, eth_type =ETH_TYPE_IP, ip_proto=IPPROTO_UDP,
                                             ipv4_src = ipo.src, ipv4_dst = ipo.dst,
                                             udp_src = udpo.src_port, udp_dst = udpo.dst_port)
@@ -345,7 +479,7 @@ class SecureFirewall(app_manager.RyuApp):
                 actions_default = action_drop
 
         except Exception as err:
-            self.logger.info("ERROR: %s", err)
+            self.logger.info("ERROR in 425: %s", err)
             action_drop = [parser.OFPActionOutput(ofproto.OFPPC_NO_FWD)]
             actions_default = action_drop
         finally:
@@ -355,7 +489,7 @@ class SecureFirewall(app_manager.RyuApp):
     def arp_handling(self, datapath, out_port, eth_obj, in_port):
         if out_port != datapath.ofproto.OFPP_FLOOD:
             actions = [datapath.ofproto_parser.OFPActionOutput(out_port)]
-            self.flow.add_flow(datapath=datapath, actions = actions, priority=1000,
+            self.flow.add_flow(datapath=datapath, actions = actions, priority=1001,
                                in_port=in_port, eth_type=ETH_TYPE_ARP, eth_src=eth_obj.src,eth_dst=eth_obj.dst)
 
     def port_learn(self, datapath, eth_obj, in_port):
@@ -365,18 +499,14 @@ class SecureFirewall(app_manager.RyuApp):
                                                       '00:00:00:00:00:10':10,'00:00:00:00:00:11':11,'00:00:00:00:00:12':12,'00:00:00:00:00:12':13,
                                                       '00:00:00:00:00:14':14,'00:00:00:00:00:15':15,})
             self.mac_to_port[datapath.id][eth_obj.src] = in_port
-            # out_port = datapath.ofproto.OFPP_FLOOD
 
             if (eth_obj.ethertype == ETH_TYPE_IP) or (eth_obj.ethertype == ETH_TYPE_ARP):
                 if eth_obj.dst in self.mac_to_port[datapath.id]:
                     out_port = self.mac_to_port[datapath.id][eth_obj.dst]
                     return out_port 
-                # else:
                 out_port = datapath.ofproto.OFPP_FLOOD
                 return out_port 
         except Exception as err:
-            self.info(err)
+            self.info("Error in 435: ",err)
             out_port = datapath.ofproto.OFPP_FLOOD
             return out_port
-        # finally:
-        #     return out_port 
