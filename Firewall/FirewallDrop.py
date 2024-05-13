@@ -185,6 +185,12 @@ class SecureFirewall(app_manager.RyuApp):
             for stat in sorted([flow for flow in body if flow.priority == 1001],
                                key=lambda flow: (flow.match.get('in_port', 0))):
 
+                self.logger.info('%016x %8x %8x %8d %8d',
+                                ev.msg.datapath.id,
+                                stat.match['in_port'],# stat.match['eth_src'], stat.match['eth_dst'],
+                                stat.instructions[0].actions[0].port,
+                                stat.packet_count, stat.byte_count)
+
                 self.total_packet[(stat.match['in_port'], stat.instructions[0].actions[0].port)] += 10
                 # self.total_packet[(int(stat.match['ipv4_src']), int(stat.match['ipv4_dst']))] += 10
                 print(stat.packet_count/self.total_packet[(stat.match['in_port'], stat.instructions[0].actions[0].port)])
@@ -192,26 +198,17 @@ class SecureFirewall(app_manager.RyuApp):
                 self.logger.info(stat.match)
                 if(stat.packet_count / self.total_packet[(stat.match['in_port'], stat.instructions[0].actions[0].port)]) >= 3:
                     # Drop this packet here
-                    # self.logger.info("DROP in --- in_port: ",stat.match['in_port']," out_port: ", stat.instructions[0].actions[0].port)
-                    self.logger.info("DROP in --- in_port: {}, out_port: {}".format(stat.match['in_port'], stat.instructions[0].actions[0].port))
                     actions = []
                     inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
                     mod = parser.OFPFlowMod(datapath=datapath, priority=1002, match=stat.match, instructions=inst)
                     datapath.send_msg(mod)
 
-                    # ipv4_src = stat.match.get('ipv4_src')
-                    # ipv4_dst = stat.match.get('ipv4_dst')
+                    ipv4_src = stat.match.get('ipv4_src')
+                    ipv4_dst = stat.match.get('ipv4_dst')
                     # in_port = stat.match.get('in_port')
                     # eth = stat.match.get('eth_type')
                     # ip_proto = stat.match.get('ip_proto')
-
-                    
-
-                self.logger.info('%016x %8x %8x %8d %8d',
-                                ev.msg.datapath.id,
-                                stat.match['in_port'],# stat.match['eth_src'], stat.match['eth_dst'],
-                                stat.instructions[0].actions[0].port,
-                                stat.packet_count, stat.byte_count)
+                    self.logger.info("DROPED in --- in_port: {}, out_port: {}, IPv4_src: {}, IPv4_dst: {}".format(stat.match['in_port'], stat.instructions[0].actions[0].port, ipv4_src, ipv4_dst))
 
         except Exception as err:
             self.logger.info("ERROR in 140: %s", err)
