@@ -131,8 +131,8 @@ mininet> xterm c0 h1 h2 h3 <...>
   h2> hping3 --udp -c 10 -k -s 8080 -p 1000 10.0.0.1
   //and ...
   ```
-## Works
-1. Check query database from rules. -- Done
-2. Covert database from 'ALLOW' to 'DROP'. -- Done
-3. Create rule check times send packet from source IP Address. -- Semi
-4. Run on project' network (3 switch). -- Done
+<!-- ## Works -->
+<!-- 1. Check query database from rules. -- Done -->
+<!-- 2. Covert database from 'ALLOW' to 'DROP'. -- Done -->
+<!-- 3. Create rule check times send packet from source IP Address. -- Done -->
+<!-- 4. Run on project' network (3 switch). -- Done -->
