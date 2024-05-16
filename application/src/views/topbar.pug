@@ -1,0 +1,47 @@
+nav.main-header.navbar.navbar-expand.navbar-primary.navbar-dark
+  // Left navbar links
+  ul.navbar-nav
+    li.nav-item
+      a.nav-link(data-widget='pushmenu', href='', role='button')
+        i.fas.fa-bars 
+    li.nav-item
+      a.nav-link.text-white(href='./', role='button')
+        large
+          b(style='font-size:22px; line-height: 24px;') FIREWALL MANAGER
+
+  // Right navbar links
+  ul.navbar-nav.ml-auto
+    li.nav-item
+      a.nav-link(data-widget='fullscreen', href='#', role='button')
+        i.fas.fa-expand-arrows-alt
+    li.nav-item.dropdown
+      a.nav-link(data-toggle='dropdown', aria-expanded='true', href='javascript:void(0)')
+        span.d-flex.badge-pill
+          span.fa.fa-user.mr-2
+          span
+            b.admin
+          span.fa.fa-angle-down.ml-2
+      .dropdown-menu(aria-labelledby='account_settings', style='left: -2.5em;')
+        a.dropdown-item#manage_account(href='/me', style='position: relative;')
+          i.fa.fa-cog
+          span.pl-3.manage-account-text| Quản lý tài khoản
+        a.dropdown-item(onclick='window.location.href="/changepass"')
+          i.fa.fa-key
+          span.pl-3| Đổi mật khẩu
+        a.dropdown-item(onclick='logout()')
+          i.fa.fa-power-off
+          span.pl-3| Đăng xuất
+
+script.
+      function logout() {
+      fetch('/api/v1/users/logout', {
+        method: 'GET', // or 'GET' if your API uses GET request for logout
+      })
+      .then(() => {
+        // Redirect to login page after successful logout
+        window.location.href = "/login";
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+    }

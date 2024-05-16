@@ -1,0 +1,39 @@
+extends index
+
+block content
+  .col-lg-12
+    .card
+      .card-body
+        form.rule-form
+          .row
+            .col-md-6.border-right
+              .form-group
+                label.control-label Source IP
+                input#src_ip(type="text" name="src_ip" class="form-control form-control-sm" )
+              .form-group
+                label.control-label Destination IP
+                input#dst_ip(type="text" name="dst_ip" class="form-control form-control-sm" )
+              .form-group
+                label.control-label Protocol
+                input#protocol(type="text" name="protocol" class="form-control form-control-sm" )
+
+            .col-md-6
+              .form-group
+                label.control-label Source Port
+                input#src_port.form-control.form-control-sm(type="text" name="src_port")
+              .form-group
+                label.control-label Destination Port
+                input#dst_port.form-control.form-control-sm(type="text" name="dst_port" )
+              .form-group
+                label.control-label State
+                input#state.form-control.form-control-sm(type="text" name="state")
+              .form-group
+                label.control-label Action
+                input#action.form-control.form-control-sm(type="text" name="action" )
+
+          hr
+          .col-lg-12.text-right.justify-content-center.d-flex
+            button.btn.btn-primary.mr-2(type="submit") Lưu
+            button.btn.btn-secondary(type="button" onclick="location.href = './users'") Cancel
+
+  

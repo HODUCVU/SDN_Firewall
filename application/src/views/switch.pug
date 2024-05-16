@@ -1,0 +1,75 @@
+extends index
+
+block content
+    .col-lg-12
+        .card.card-outline.card-success
+             
+            .card-body
+                table.table.tabe-hover.table-condensed#list
+                    colgroup
+                        col(width="33%")
+                        col(width="33%")
+                        col(width="33%")
+
+                    thead
+                        tr
+                        th.text-center Switch
+                        th.text-center Status
+                        th.text-center 
+                        
+                        
+                    tbody
+                        each sw in data
+                            tr  
+                                th.text-center= sw.switch_id
+                                td.text-center
+                                    
+                                    span.badge.badge-secondary= sw.status
+                                td.text-center
+                                    button.btn.btn-default.btn-sm.btn-flat.border-info.wave-effect.text-info.dropdown-toggle(type="button", data-toggle="dropdown", aria-expanded="true") Hoạt động
+                                    
+                                    .dropdown-menu
+                                        a.dropdown-item.delete_project(href="javascript:void(0)", data-id="<?php echo $row[\'id\'] ?>") Xem Flow
+                                        .dropdown-divider
+                                        button.dropdown-item.view_project( type = "button",onclick=`changeSwitchState('enable','${sw.switch_id}')`) Enable
+                                        .dropdown-divider
+                                        button.dropdown-item.view_project( type = "button",onclick=`changeSwitchState('disable','${sw.switch_id}')`) Disable
+                                        
+                                        
+    style.
+        
+        table p{
+                margin: unset !important;
+            }
+            table td{
+                vertical-align: middle !important
+            }
+        
+    script.
+        
+        $(document).ready(function(){
+                $('#list').dataTable()
+            
+            $('.delete_project').click(function(){
+            _conf("Are you sure to delete this project?","delete_project",[$(this).attr('data-id')])
+            })
+        })
+        function delete_project($id){
+                start_load()
+                $.ajax({
+                    url:'ajax.php?action=delete_project',
+                    method:'POST',
+                    data:{id:$id},
+                    success:function(resp){
+                        if(resp==1){
+                            alert_toast("Data successfully deleted",'success')
+                            setTimeout(function(){
+                                location.reload()
+                            },1500)
+        
+                        }
+                    }
+                })
+            }
+        
+        

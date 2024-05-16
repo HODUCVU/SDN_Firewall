@@ -1,0 +1,168 @@
+/* Reset some default styles */
+html, body, div, span, h1, h2, h3, h4, h5, h6, p, a, button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+
+/* Box sizing border-box for all elements */
+*, *:before, *:after {
+  box-sizing: border-box;
+}
+
+/* Apply a natural box layout model to all elements, but allowing components to change */
+html {
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  background-color: black;
+}
+
+.container {
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  height: 100vh;
+  align-items: center;
+}
+.container1{
+  border: 2px solid blue;
+  border-radius: 10px;
+  background-color: #eee; /* Màu nền */
+  padding: 10px;
+  margin-right: 5px;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+.container2{
+  border: 2px solid blue;
+  border-radius: 10px;
+  background-color: #eee; /* Màu nền */
+  padding: 10px;
+  margin-left: 5px;
+}
+.hidden {
+  display: none;
+}
+
+.has-text-centered {
+  text-align: center;
+}
+
+/* Styling for the buttons */
+.button {
+  margin: 5px;
+}
+
+.is-primary {
+  background-color: #3273dc;
+  color: #fff;
+}
+
+.is-info {
+  background-color: #209cee;
+  color: #fff;
+}
+
+.is-danger {
+  background-color: #ff3860;
+  color: #fff;
+}
+.share-button {
+  background-color: #808080;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  /* display: none; */
+}
+.share-button:hover{
+  background-color: red;
+  color: #fff;
+}
+/* Styling for the chat section */
+.chat-section {
+  width: 300px;
+  background-color: #f4f4f4;
+  padding: 15px;
+  border-radius: 5px;
+  margin-top: 20px;
+}
+
+.chat-messages {
+  list-style: none;
+  margin-bottom: 10px;
+  overflow-y: auto;
+  max-height: 200px;
+}
+
+.chat-form {
+  display: flex;
+  margin-top: 10px;
+}
+
+.chat-form input {
+  flex: 1;
+  padding: 5px;
+}
+
+.boxChat {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.contentChat {
+  height: 50vh;
+  overflow-y: auto;
+}
+
+/* Styling for the footer controls */
+.zoom-footer {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: space-evenly;
+  justify-items: center;
+}
+
+.audio-control,
+.video-control,
+.share-screen,
+.participants {
+  margin: 5px;
+}
+#videos {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+#videos video {
+  flex: 1 1 50%;
+  padding: 0;
+  min-width: 0;
+}
+/* Additional styles */
+.header-highlight {
+  color: #ff4954;
+}
+
+.info {
+  padding: 1.5rem;
+}
+.icon {
+  width: 100%; /* Chiều rộng ảnh là 100% của phần tử chứa */
+  max-width: 400px; /* Tối đa chiều rộng của ảnh là 400px */
+  height: auto; /* Tự động tính toán chiều cao để duy trì tỉ lệ khung hình */
+  display: block; /* Để loại bỏ khoảng trắng dư thừa dưới ảnh */
+  margin: 0 auto;
+  border-radius: 2px;
+  }

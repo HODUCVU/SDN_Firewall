@@ -1,0 +1,92 @@
+extends index
+
+block content
+    .col-lg-12
+        .card.card-outline.card-success
+            .card-header
+                .card-tools
+                    -if(user.role == 'sinh_vien')
+                        a.btn.btn-block.btn-sm.btn-default.btn-flat.border-primary(onclick='window.location.href="/new_topic"')
+                            i.fa.fa-plus 
+                                |Thêm đề tài
+            .card-body
+                table.table.tabe-hover.table-condensed#list
+                    colgroup
+                        col(width="5%")
+                        col(width="35%")
+                        col(width="15%")
+                        col(width="15%")
+                        col(width="20%")
+                        col(width="10%")
+                    thead
+                        tr
+                        th.text-center #
+                        th Project
+                        th Ngày bắt đầu
+                        th Hạn cuối
+                        th Trạng thái
+                        th Hoạt động
+                        
+                    tbody
+                        - var count = 1;
+                        each topic in data
+                            tr  
+                                th.text-center #{count++}                                
+                                td
+                                    p
+                                        b= topic.TenDeTai
+                                td
+                                    -if(topic.NgayThucHien)
+                                        b= topic.NgayThucHien.toLocaleDateString()
+                                td
+                                    -if(topic.NgayKetThuc)
+                                        b= topic.NgayKetThuc.toLocaleDateString()
+                                td.text-center
+                                    -if(topic.NgayKetThuc && new Date(topic.NgayKetThuc).getTime() < new Date().getTime())
+                                        span.badge.badge-secondary.class-color Quá hạn
+                                    -else
+                                        span.badge.badge-secondary= topic.TrangThai
+                                td.text-center
+                                    button.btn.btn-default.btn-sm.btn-flat.border-info.wave-effect.text-info.dropdown-toggle(type="button", data-toggle="dropdown", aria-expanded="true") Hoạt động 
+                                    
+                                    .dropdown-menu
+                                        a.dropdown-item.view_project(href=`/topic/${topic._id}`) Xem
+                                        .dropdown-divider
+                                        -if(topic.TrangThai =="phân công xét duyệt")
+                                            button.dropdown-item(style="button", onclick=`editTopic('${topic._id}')`) Chỉnh sửa
+                                            .dropdown-divider
+                                            //- button.dropdown-item.delete_project(href="javascript:void(0)", data-id="<?php echo $row[\'id\'] ?>") Xóa
+                                        button.dropdown-item(type="button", onclick=`deleteTopic('${topic._id}')`) Xóa
+                            include editTopic
+    style.
+        table p{
+                margin: unset !important;
+            }
+            table td{
+                vertical-align: middle !important
+            }
+    script.
+        $(document).ready(function(){
+                $('#list').dataTable()
+            
+            $('.delete_project').click(function(){
+            _conf("Are you sure to delete this project?","delete_project",[$(this).attr('data-id')])
+            })
+        })
+        function delete_project($id){
+                start_load()
+                $.ajax({
+                    url:'ajax.php?action=delete_project',
+                    method:'POST',
+                    data:{id:$id},
+                    success:function(resp){
+                        if(resp==1){
+                            alert_toast("Data successfully deleted",'success')
+                            setTimeout(function(){
+                                location.reload()
+                            },1500)
+                        }
+                    }
+                })
+            }
+        
