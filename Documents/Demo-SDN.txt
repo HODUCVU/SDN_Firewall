@@ -1,0 +1,20 @@
+Kịch bản:
+1. Ping theo database:
+- Ping ICMP: 
+	+ Mở h1: xterm h1 -> ping 10.0.0.2 -> xem trên app có bị chặn.
+	-> ping 10.0.0.4 (ping trong cùng 1 switch xem nó cho phép truyền)
+	-> ping 10.0.0.15 (ping khác switch xem nó cho phép truyền)
+- Ping TCP: 
+	+ Mở h2: xterm h2 -> hping3 -c 10 -k -s s_port -p dst_port -S 10.0.0.3 (ping TCP SYN)-> xem trên app có bị chặn.
+	-> ping TCP (SYN_ACK): hping3 -c 10 -k -s s_port -p dst_port -SA 10.0.0.3 -> xem trên app có bị chắn
+	+ ping TCP cho phép truyền: hping3 -c 10 -k -s s_port -p dst_port -S 10.0.0.5 -> xem nó cho phép truyền trong cùng switch.
+	+ hping3 -c 10 -k -s s_port -p dst_port -S 10.0.0.14 -> cho phép truyền khác switch.
+- Ping UDP: tương ứn với kịch bản (TCP).
+2. Thêm flow và check nó có bị chặn:
+- Thêm flow ICMP từ h4 đến h10 (tcp port cho None). ping từ h4 đến h10 xem nó có bị chặn và có hiển thị trên app không.
+- Thêm flow TCP từ h5 đến h9 (source_port: 1000, destination_port: 8080). hping3 từ h5 đến h9 xem nó có bị chặn và có hiển thị trên app không. -> hping3 từ h5 đến h9 với tcp_port khác (1000 và 1000) xem nó có cho phép truyền hay không.
+- Thêm flow UDP từ h6 đến h8 (s_port: 8080, d_port: 1000). hping3 từ h6 đến h8 xem nó có bị chặn và có hiển thị trên app không. -> hping3 khác cổng (8080, 8080) xem nó cho phép truyền hay không.
+3. Ping liên tục:
+- Ping ICMP: mở h7 -> ping -f 10.0.0.10 -> xem trong vòng một vài giây xem nó có bị chặn và hiển thị trên app hay không -> và mininet: "sh ovs-ofctl dump-flows s1" để xem có flow drop hay không. -> ping lại từ h7 đến h10: h7 ping h10 (không flood) để xem nó có bị chặn hay không.
+- Ping TCP: mở h4 -> hping3 đến h6. kịch bản tương tự như ping icmp.
+- Ping UDP: mở h8 -> hping3 đến h12. kịch bản tương tự như ping icmp.
