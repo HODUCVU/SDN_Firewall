@@ -1,0 +1,52 @@
+extends index
+
+block content	
+  .col-lg-12
+    .card.card-outline.card-success
+      .card-header
+        .card-tools
+          a.btn.btn-block.btn-sm.btn-default.btn-flat.border-primary(onclick='window.location.href="/newuser"')
+            i.fa.fa-plus
+            | Thêm thành viên mới
+      .card-body
+        table.table.tabe-hover.table-bordered#list
+          thead
+            tr
+              th.text-center #
+              th Tên
+              th Email
+              th Vai trò
+              th Hoạt động
+          tbody
+            -var count = 1;
+            each user in users
+              tr
+                th.text-center #{count++}
+                td
+                  b= user.name 
+                td
+                  b= user.email
+                td
+                  if user.role == "sinh_vien"
+                    b sinh viên
+                  else if user.role == "giang_vien"
+                    b giảng viên
+                  else
+                    b= user.role
+
+                td.text-center
+                  button.btn.btn-default.btn-sm.btn-flat.border-info.wave-effect.text-info.dropdown-toggle(type="button", data-toggle="dropdown", aria-expanded="true")                    
+                    |  Action
+                  .dropdown-menu
+                    a.dropdown-item(href=`/users/${user._id}`) Xem
+                    .dropdown-divider
+                    button.dropdown-item(type="button", onclick=`editUser('${user._id}')`) Chỉnh sửa
+                    .dropdown-divider
+                    button.dropdown-item(type="button", onclick=`deleteUser('${user._id}')`) Xóa
+              include edituser                
+  script.
+    $(document).ready(function(){
+      $('#list').dataTable()
+    })
+
+

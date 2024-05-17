@@ -1,0 +1,212 @@
+form(id="form-diem")
+    .card-body
+        table.table.table-hover.table-condensed#list
+            colgroup
+                col(width="60%")
+                col(width="10%")
+                col(width="10%")
+
+            thead
+                tr
+                th.text-center Đánh giá
+                th.text-center Điểm tối đa
+                th.text-center Điểm chấm             
+            tbody
+
+                tr 
+                    td.text-center
+                        p 
+                            b Đặt vấn đề  
+                    td.text-center
+                        b 40
+                tr
+                    td
+                        p Đặt vấn đề ngắn gọn, nêu rõ vấn đề cần giải quyết, câu hỏi đánh giá, sự cần thiết, các nghiên cứu đánh giá khác liên quan.
+                    td.text-center
+                        p.truncate 20
+
+                    td.text-center
+                        input(type='number', name='score', min='0', max='20')
+
+                tr
+                    td
+                        p Lý do tiến hành nghiên cứu đánh giá được trình bày thuyết phục.
+                    td.text-center
+                        p.truncate 20
+                    td.text-center
+                        input(type='number', name='score', min='0', max='20')
+
+                tr 
+                    td.text-center
+                        p 
+                            b Mục tiêu đánh giá
+                    td.text-center
+                        b 10
+                tr
+                    td
+                        p Mục tiêu đánh giá vấn đề nghiên cứu rõ ràng.
+                    td.text-center
+                        p.truncate 5
+
+                    td.text-center
+                        input(type='number', name='score', min='0', max='5')
+                tr
+                    td
+                        p Mục tiêu được viết thành câu rỏ ràng.
+                    td.text-center
+                        p.truncate 5
+
+                    td.text-center
+                        input(type='number', name='score', min='0', max='5')
+
+                tr 
+                    td.text-center
+                        p 
+                            b Phương pháp nghiên cứu đánh giá
+                    td.text-center
+                        b 50
+                tr
+                    td
+                        p Phương pháp nghiên cứu phù hợp.
+                    td.text-center
+                        p.truncate 10
+
+                    td.text-center
+                        input(type='number', name='score', min='0', max='10')
+                tr
+                    td
+                        p Vấn đề đánh giá phù hợp.
+                    td.text-center
+                        p.truncate 10
+
+                    td.text-center
+                        input(type='number', name='score', min='0', max='10')
+                tr
+                    td
+                        p Có khung lý thuyết phù hợp.
+                    td.text-center
+                        p.truncate 10
+                    td.text-center
+                        input(type='number', name='score', min='0', max='10')          
+                tr
+                    td
+                        p Bộ công cụ thu thập số liệu phù hợp với biến số, giả thuyết nghiên cứu và được trình bày hợp lý.
+                    td.text-center
+                        p.truncate 10
+                    td.text-center
+                        input(type='number', name='score', min='0', max='10')          
+                tr
+                    td
+                        p Phương pháp phân tích và xử lý số liệu hợp lý, khoa học và phù hợp với mục tiêu đánh giá.
+                    td.text-center
+                        p.truncate 10
+                    td.text-center
+                        input(type='number', name='score', min='0', max='10')          
+            
+                tr 
+                    td.text-center
+                        p 
+                            b Ý nghĩa thực tiễn và tính sáng tạo của đề tài.
+                    td.text-center
+                        b 10
+                tr
+                    td
+                        p Đề tài có tính thời sự, có ý nghĩa trong thực tiễn.
+                    td.text-center
+                        p.truncate 5
+
+                    td.text-center
+                        input(type='number', name='score', min='0', max='5')
+                tr
+                    td
+                        p Có tính sáng tạo, đóng góp mới cho lĩnh vực đánh giá.
+                    td.text-center
+                        p.truncate 5
+
+                    td.text-center
+                        input(type='number', name='score', min='0', max='5')
+
+                tr 
+                    td.text-center
+                        p 
+                            b Hình thức trình bày
+                    td.text-center
+                        b 10
+                tr
+                    td
+                        p Lỗi chính tả, cú pháp, trình bày khoa học, súc tích, rõ ràng, dễ hiểu.
+                    td.text-center
+                        p.truncate 10
+
+                    td.text-center
+                        input(type='number', name='score', min='0', max='10')
+
+                tr
+                    td.text-center 
+                        b Tổng số điểm
+                    td
+                        td.text-center#totalScore 0
+                
+        b Nhận xét      
+        textarea(id='comment', name='comment', rows='4', cols='50', style='width:100%')
+
+        .col-lg-12.text-right.justify-content-center.d-flex
+            button.btn.btn-primary.mr-2(type="button", id='saveButton') Lưu
+            button.btn.btn-secondary(type="button"  id='cancelButton') Cancel
+
+      
+// Thêm script để cập nhật tổng số điểm
+script.
+    // Lấy tất cả các ô nhập điểm
+    const scoreInputs = document.querySelectorAll('input[name="score"]');
+    // Lấy ô hiển thị tổng số điểm
+    const totalScoreElement = document.getElementById('totalScore');
+    const form = document.getElementById('scoreForm');
+    const saveButton = document.getElementById('saveButton');
+    const cancelButton = document.getElementById('cancelButton');
+    // Hàm để cập nhật tổng số điểm
+    function updateTotalScore() {
+        let totalScore = 0;
+        scoreInputs.forEach(input => {
+            totalScore += Number(input.value);
+        });
+        totalScoreElement.textContent = totalScore;
+    }
+
+    // Gọi hàm cập nhật tổng số điểm mỗi khi người dùng thay đổi giá trị của một ô nhập điểm
+    scoreInputs.forEach(input => {
+        input.addEventListener('input', updateTotalScore);
+    });
+
+
+
+    saveButton.addEventListener('click', function() {
+        const id = window.location.pathname.split('/')[2]; // Lấy id từ URL
+        const score = parseFloat(document.getElementById('totalScore').textContent);
+        const NhanXet = document.getElementById('comment').value;
+        axios({
+            method: 'patch',
+            url: `/api/v1/topics/${id}`,
+            data: {
+                Diem: score,
+                NhanXet: NhanXet,
+                TrangThai: 'Hoàn thành'
+            },
+
+        })
+        .then(response => {
+            alert("Thành công")
+                window.location.href = `/topics`;
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    });
+
+    cancelButton.addEventListener('click', function() {
+        document.getElementById('myForm').style.display = 'none';
+    });
+
+
+
+

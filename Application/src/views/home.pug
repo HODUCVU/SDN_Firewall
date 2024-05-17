@@ -1,0 +1,221 @@
+extends index
+
+block content
+  .col-12
+    .card
+      .card-body
+        p  
+          strong Drop table
+        table.table.table-hover.table-condensed#list1
+          colgroup
+            col(width="25%")
+            col(width="25%")
+            col(width="10%")
+            col(width="10%")
+            col(width="10%")
+            col(width="10%")
+            col(width="10%")
+
+          thead
+            tr
+              th.text-center Source IP
+              th.text-center Destination IP
+              th.text-center Protocol   
+              th.text-center Source Port  
+              th.text-center Destination Port  
+              th.text-center State 
+              th.text-center Action        
+          tbody
+            each rule in row
+              tr
+                td
+                  p
+                    b= rule.src_ip
+                
+                td.text-center
+                  b= rule.dst_ip
+                td.text-center
+                  b= rule.protocol
+                td.text-center
+                  b= rule.src_port
+                td.text-center
+                  b= rule.dst_port
+                td.text-center
+                  b= rule.state
+                td.text-center
+                  b= rule.action  
+
+    .card.card-outline.card-success
+          .card-header
+            p  Flow tabel
+          .card-body
+            table.table.table-hover.card-header#list
+              thead
+                tr
+                  th Priority
+                  th Match Fields
+                  th Cookie
+                  th Duration
+                  th Idle Timeout
+                  th Hard Timeout
+                  th Instructions
+                  th Packet Count
+                  th Byte Count
+                  th Actions
+              tbody
+                //- each flows in flowss
+                //-   each flow in flows
+                //-     tr
+                //-       td.text-center
+                //-         b= flow.priority
+                //-       td.text-center
+                //-         b= flow.match
+                //-       td.text-center
+                //-         b= flow.cookie
+                //-       td.text-center
+                //-         b= flow.duration_sec
+                //-       td.text-center
+                //-         b= flow.idle_timeout
+                //-       td.text-center
+                //-         b= flow.hard_timeout
+                //-       td.text-center
+                //-         b= flow.actions
+                //-       td.text-center
+                //-         b= flow.packet_count
+                //-       td.text-center
+                //-         b= flow.byte_count
+                //-       td.text-center
+                //-         b= flow.flags
+                
+
+  style.
+      table p {
+        margin: unset !important;
+      }
+      table td {
+        vertical-align: middle !important;
+      }
+
+  script.
+    $(document).ready(function(){
+      $('#list').dataTable()
+      $('#list1').dataTable()
+    })
+
+    function fetchDataAndUpdate() {
+        // Gọi API để lấy dữ liệu mới
+        fetch('http://127.0.0.1:8080/status?status=flows&dpid=1')
+            .then(response => response.json())
+            .then(data => {
+                // Xóa dữ liệu cũ trong bảng
+                const tableBody = document.querySelector('#list tbody');
+                tableBody.innerHTML = '';
+
+                // Lặp qua các thuộc tính của đối tượng data và cập nhật vào bảng
+                for (let keys in data) {
+                    for (let key in data[`${keys}`]) {
+                      
+                          const flow = data[`${keys}`][`${key}`];
+                          if(flow.priority == 1002){
+                            const row = document.createElement('tr');
+                            const matchString = JSON.stringify(flow.match);
+                            row.innerHTML = `
+                                <td class="text-center">${flow.priority}</td>
+                                <td class="text-center">${matchString}</td>
+                                <td class="text-center">${flow.cookie}</td>
+                                <td class="text-center">${flow.duration_sec}</td>
+                                <td class="text-center">${flow.idle_timeout}</td>
+                                <td class="text-center">${flow.hard_timeout}</td>
+                                <td class="text-center">${flow.actions}</td>
+                                <td class="text-center">${flow.packet_count}</td>
+                                <td class="text-center">${flow.byte_count}</td>
+                                <td class="text-center">DROP</td>
+                            `;
+                            tableBody.appendChild(row);
+                          }
+                          
+                      }
+                }
+              fetch('http://127.0.0.1:8080/status?status=flows&dpid=2')
+            .then(response => response.json())
+            .then(data => {
+                // Xóa dữ liệu cũ trong bảng
+                const tableBody = document.querySelector('#list tbody');
+
+                // Lặp qua các thuộc tính của đối tượng data và cập nhật vào bảng
+                for (let keys in data) {
+                    for (let key in data[`${keys}`]) {
+                      
+                          const flow = data[`${keys}`][`${key}`];
+                          if(flow.priority==1002){
+                            const row = document.createElement('tr');
+                            const matchString = JSON.stringify(flow.match);
+                            row.innerHTML = `
+                                <td class="text-center">${flow.priority}</td>
+                                <td class="text-center">${matchString}</td>
+                                <td class="text-center">${flow.cookie}</td>
+                                <td class="text-center">${flow.duration_sec}</td>
+                                <td class="text-center">${flow.idle_timeout}</td>
+                                <td class="text-center">${flow.hard_timeout}</td>
+                                <td class="text-center">${flow.actions}</td>
+                                <td class="text-center">${flow.packet_count}</td>
+                                <td class="text-center">${flow.byte_count}</td>
+                                <td class="text-center">DROP</td>
+                            `;
+                            tableBody.appendChild(row);
+                          }
+                          
+                      }
+                }
+                fetch('http://127.0.0.1:8080/status?status=flows&dpid=3')
+            .then(response => response.json())
+            .then(data => {
+                // Xóa dữ liệu cũ trong bảng
+                const tableBody = document.querySelector('#list tbody');
+
+                // Lặp qua các thuộc tính của đối tượng data và cập nhật vào bảng
+                for (let keys in data) {
+                    for (let key in data[`${keys}`]) {
+                      
+                          const flow = data[`${keys}`][`${key}`];
+                          if(flow.priority==1002){
+                            const row = document.createElement('tr');
+                            const matchString = JSON.stringify(flow.match);
+                            row.innerHTML = `
+                                <td class="text-center">${flow.priority}</td>
+                                <td class="text-center">${matchString}</td>
+                                <td class="text-center">${flow.cookie}</td>
+                                <td class="text-center">${flow.duration_sec}</td>
+                                <td class="text-center">${flow.idle_timeout}</td>
+                                <td class="text-center">${flow.hard_timeout}</td>
+                                <td class="text-center">${flow.actions}</td>
+                                <td class="text-center">${flow.packet_count}</td>
+                                <td class="text-center">${flow.byte_count}</td>
+                                <td class="text-center">"DROP"</td>
+                            `;
+                            tableBody.appendChild(row);}
+                          
+                      }
+                }
+
+                
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+            });
+    
+                
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+            });
+    
+                
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+            });
+    }
+
+    setInterval(fetchDataAndUpdate, 5000);
+

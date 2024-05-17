@@ -1,0 +1,4 @@
+{
+  "appService.defaultWebAppToDeploy": "undefined/subscriptions/32ca8dd2-9c14-4e69-88f4-b2815957c813/resourceGroups/nckh-nin/providers/Microsoft.Web/sites/nckh-nin",
+  "appService.deploySubpath": "."
+}
