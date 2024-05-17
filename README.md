@@ -1,4 +1,36 @@
-
+# Report's Group 9.
+## Member
+1. Ho Duc Vu - 20KTMT2.
+2. Huynh Vu Dinh Phuoc - 20KTMT1.
+3. Nguyen Minh Phuong - 20KTMT1.
+## Important files 
+```
+├── Documents
+│   ├── Report_SDN-Firewall_And_Application_Control_Network.pdf
+│   ├── Slide-Group9.pptx
+├── Firewall
+│   ├── connection_tracking.py
+│   ├── construct_flow.py
+│   ├── dataset
+│   │   ├── firewall-drop.db
+│   ├── FirewallDrop.py
+│   ├── flow_addition.py
+│   ├── flowtracker.py
+│   ├── packet_out.py
+│   ├── ParseFirewallFromDB.py
+│   ├── reset_flow_table.py
+│   ├── SQL
+│   │   ├── firewall.csv
+│   │   ├── initDB.py
+│   └── switch_information.py
+├── Network
+│   └── network.py
+├── Application
+│   └── ... 
+```
+## Links
+1. [Slide](https://github.com/HODUCVU/SDN_Firewall/blob/Report/Documents/Slide-Group9.pptx)
+2. [Report version pdf]() 
 # SDN_Firewall
 ## My Topic
 * Tutorial and result for this project: [SDN Firewall and Application control Network.](https://github.com/HODUCVU/SDN_Firewall/blob/main/Documents/SDN-Firewall_And_Application_Control_Network.pdf)
