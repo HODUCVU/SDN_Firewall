@@ -74,11 +74,11 @@
 <!-- s3 lo:  s3-eth1:s2-eth2 s3-eth2:h11-eth0 s3-eth3:h12-eth0 s3-eth4:h13-eth0 s3-eth5:h14-eth0 s3-eth6:h15-eth0 -->
 <!-- c0 -->
 <!-- ``` -->
-<!-- <!-- ## Works --> -->
-<!-- <!-- 1. Check query database from rules. -- Done --> -->
-<!-- <!-- 2. Covert database from 'ALLOW' to 'DROP'. -- Done --> -->
-<!-- <!-- 3. Create rule check times send packet from source IP Address. -- Done --> -->
-<!-- <!-- 4. Run on project' network (3 switch). -- Done --> -->
+<!-- <!-- ## Works --> 
+<!-- <!-- 1. Check query database from rules. -- Done -->
+<!-- <!-- 2. Covert database from 'ALLOW' to 'DROP'. -- Done --> 
+<!-- <!-- 3. Create rule check times send packet from source IP Address. -- Done --> 
+<!-- <!-- 4. Run on project' network (3 switch). -- Done --> 
 <!---->
 <!-- # Demo on Application -->
 <!-- Video demo is pushed on [Youtube](https://www.youtube.com/watch?v=Y4_bdANML4c&fbclid=IwAR0CCl0YLMpUoshtkUvCrPExZ2ZvN3odxbjxDokLjhsl_V-wVNAzPE99YIA) -->
