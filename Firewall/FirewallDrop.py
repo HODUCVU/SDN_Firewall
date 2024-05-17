@@ -82,11 +82,6 @@ class SecureFirewall(app_manager.RyuApp):
                 self.logger.info("Firewall rules parsed successfully from the database.")
             else:
                 self.logger.error("Failed to parse firewall rules from the database.")
-            # current_time = time.time()
-            # elapsed_time = current_time - self.last_time
-            # self.totaltime += elapsed_time
-            # print("on monitor: ", self.totaltime)
-            # self.last_time = current_time
             hub.sleep(5)
     def _request_stats(self, datapath):
         self.logger.debug('send stats request: %016x', datapath.id)
@@ -122,20 +117,9 @@ class SecureFirewall(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         try:
-            # self.logger.info('datapath         '
-            #                 'in-port  '
-            #                 'out-port packets  bytes')
-            # self.logger.info('---------------- '
-            #                 '-------- '
-            #                 '-------- -------- --------')
             for stat in sorted([flow for flow in body if flow.priority == 1001],
                                key=lambda flow: (flow.match.get('in_port', 0))):
 
-                # self.logger.info('%016x %8x %8x %8d %8d',
-                #                 ev.msg.datapath.id,
-                #                 stat.match['in_port'],# stat.match['eth_src'], stat.match['eth_dst'],
-                #                 stat.instructions[0].actions[0].port,
-                #                 stat.packet_count, stat.byte_count)
 
                 self.total_packet[(stat.match['in_port'], stat.instructions[0].actions[0].port)] += 10
                 print(stat.packet_count/self.total_packet[(stat.match['in_port'], stat.instructions[0].actions[0].port)])
@@ -166,8 +150,6 @@ class SecureFirewall(app_manager.RyuApp):
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
         msg = ev.msg
-        # data = msg.data
-        # print("data: ", len(data))
         datapath = msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -236,9 +218,6 @@ class SecureFirewall(app_manager.RyuApp):
                                             priority=1001, in_port=in_port, eth_type=ETH_TYPE_IP,
                                             ip_proto = IPPROTO_ICMP, icmpv4_type=ICMP_PONG,
                                             ipv4_src=ipo.src, ipv4_dst=ipo.dst)
-
-                        # self.logger.info("%s -> %s : ALLOWED" %(ipo.src, ipo.dst))
-                    
 
                 # Check for TCP  
                 elif (ipo.proto == IPPROTO_TCP):
