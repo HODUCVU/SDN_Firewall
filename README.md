@@ -141,6 +141,7 @@ mininet> xterm c0 h1 h2 h3 <...>
 <!-- 4. Run on project' network (3 switch). -- Done -->
 
 # Demo on Application
-<!-- Video demo is pushed on [Youtube](https://www.youtube.com/watch?v=Y4_bdANML4c&fbclid=IwAR0CCl0YLMpUoshtkUvCrPExZ2ZvN3odxbjxDokLjhsl_V-wVNAzPE99YIA) -->
+Video demo is pushed on [Youtube](https://www.youtube.com/watch?v=Y4_bdANML4c&fbclid=IwAR0CCl0YLMpUoshtkUvCrPExZ2ZvN3odxbjxDokLjhsl_V-wVNAzPE99YIA) \
+Click on video below: \
 [![Video Demo](http://img.youtube.com/vi/Y4_bdANML4c/0.jpg)](http://www.youtube.com/watch?v=Y4_bdANML4c)
 
